@@ -38,7 +38,7 @@ glm::vec3 light_color{1.0f, 0.86f, 0.73f};
 glm::vec3 specular_color{1.0f, 1.0f, 1.0f};
 float material_shininess{30.0f};
 float ambient_intensity{0.14f};
-float diffuse_intensity{3.8f};
+float diffuse_intensity{7.8f};
 float shine_intensity{8.0f};
 
 // timing
@@ -212,14 +212,19 @@ int main() {
       glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
       glm::vec3 ambientColor{light_color * ambient_intensity};
       glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
+      glm::vec3 lightDir{-0.2f, -1.0f, -0.3f};
       specular_color = {diffuseColor * shine_intensity};
 
 
       lightingShader.use();
-      lightingShader.set_float("light.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
+      // lightingShader.set_float("light.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
+      lightingShader.set_float("light.transmission", lightViewPos.x, lightViewPos.y, lightViewPos.z, 1.0f);
       lightingShader.set_float("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
       lightingShader.set_float("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
       lightingShader.set_float("light.specular", specular_color.x, specular_color.y, specular_color.z);
+      lightingShader.set_float("light.constant", 1.0f);
+      lightingShader.set_float("light.linear", 0.09f);
+      lightingShader.set_float("light.quadratic", 0.032f);
 
       lightingShader.set_int("material.diffuse", 0);
       lightingShader.set_int("material.specular", 1);
@@ -245,7 +250,7 @@ int main() {
          float angle = 20.0f * i;
          glm::mat4 model = glm::mat4(1.0f);
          model = glm::translate(model, cubePositions[i]);
-         model = glm::rotate(model, angle + currentFrame / 4.0f, glm::vec3(1.0f, 0.3f, 0.5f));
+         model = glm::rotate(model, angle + currentFrame / 4, glm::vec3(1.0f, 0.3f, 0.5f));
          lightingShader.set_matrix("model", model);
          lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
 
@@ -342,22 +347,22 @@ void processInput(GLFWwindow *window) {
 
    glm::vec3 light_offset{0};
    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-      light_offset = glm::vec3(-1.0f, 0.0f, 0.0f);
+      light_offset += glm::vec3(-1.0f, 0.0f, 0.0f);
    }
    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-      light_offset = glm::vec3(1.0f, 0.0f, 0.0f);
+      light_offset += glm::vec3(1.0f, 0.0f, 0.0f);
    }
    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-      light_offset = glm::vec3(0.0f, 0.0f, -1.0f);
+      light_offset += glm::vec3(0.0f, 0.0f, -1.0f);
    }
    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-      light_offset = glm::vec3(0.0f, 0.0f, 1.0f);
+      light_offset += glm::vec3(0.0f, 0.0f, 1.0f);
    }
    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-      light_offset = glm::vec3(0.0f, 1.0f, 0.0f);
+      light_offset += glm::vec3(0.0f, 1.0f, 0.0f);
    }
    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-      light_offset = glm::vec3(0.0f, -1.0f, 0.0f);
+      light_offset += glm::vec3(0.0f, -1.0f, 0.0f);
    }
    lightPos += light_offset * delta_time;
 
