@@ -24,10 +24,12 @@ Option 2. Download the binary from Releases (requires the res folder in the same
 ![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.png?raw=true)
 
 **Dependencies**  
+*Requires:*
+* OpenGL 3.3+
+
 *Add these to your search directories:*
 * GLFW3
 * GLAD
-* OpenGL 3.3
 * GLM  
 
 *Already included as header files:*  
