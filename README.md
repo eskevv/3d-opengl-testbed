@@ -2,7 +2,7 @@
 An OpenGL rendering experiment.
 This project is used to test OpenGL features and rendering techniques in hopes of creating something more modular for learning purposes.
 
-In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State Access) functions.
+In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-Access) functions.
 
 **What you can currently see in this test bed:**
 * 3D transformations: [ Eular Angles, Panning , Movement ]
