@@ -60,7 +60,7 @@ void main()
 
     // emission
     vec3 emissive = specularMap == vec3(0) ? vec3(1) : vec3(0);
-    vec3 emissiveness = emissive /* * shininess */ /* * diffuseAngle */ /* * light.specular */;
+    vec3 emissiveness = emissive * shininess * diffuseAngle * light.specular;
     vec3 emissionCoords = vec3(texture(material.emission, TexCoords + vec2(0.0,time / 2)));
     vec3 emission = emissionCoords * emissiveness * attenuation;
 
