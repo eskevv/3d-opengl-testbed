@@ -5,10 +5,17 @@ This project is used to test OpenGL features and rendering techniques in hopes o
 In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-Access) functions.
 
 **What you can currently see in this test bed:**
-* 3D transformations: [ Eular Angles, Panning , Movement ]
+* 3D transformations:  
+
+   *1. [ Eular Angles, Panning , Movement ]*  
+   
 * Camera Class & Projections: local space -> world space -> view space -> clip space -> screen space
 * Texture Loading
-* Lighting with fragment shaders (Phong lightning model)
+* Lighting with fragment shaders (Phong lightning model):  
+
+   *1. [ Directional, Point lights, Spot lights]*  
+   *2. Attenuation (light perception across distances)*  
+   
 * Materials & Diffuse maps
 * Interfaces to test settings  
 
@@ -18,11 +25,11 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * SkyBoxes
 
 **Running:**  
-Option 1. Build from source and grab the dependencies (builds with CMake).  
-  -> you need to adjust the CMakeLists where to search for dependencies.  
-  -> from root dir: ```cmake -B build -G Ninja && cmake --build build```  
+*Option 1.* Build from source and grab the dependencies (builds with CMake).  
+>*1. you need to adjust the CMakeLists where to search for dependencies.*  
+>*2. from root dir: ```cmake -B build -G Ninja && cmake --build build```*  
 
-Option 2. Download the binary from Releases (requires the res folder in the same directory).
+*Option 2.* Download the binary from Releases (requires the res folder in the same directory).
 
 ---
 
