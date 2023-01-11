@@ -10,9 +10,12 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Texture Loading
 * Lighting with fragment shaders (Phong lightning model)
 * Materials & Diffuse maps
-* Interfaces to test settings
+* Interfaces to test settings  
+
+**Running:** Build from source and grab the dependencies or download the binary from Releases.
 
 ---
+
 **Dependencies**  
 *Add these to your search directories:*
 * GLFW3
