@@ -229,8 +229,6 @@ int main() {
 
       lightingShader.set_matrix("projection", projection);
       lightingShader.set_matrix("view", view);
-      // lightingShader.set_matrix("model", model);
-
 
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, diffuseMap);
