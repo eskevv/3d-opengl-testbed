@@ -12,7 +12,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Materials & Diffuse maps
 * Interfaces to test settings  
 
-**Running:** Build from source and grab the dependencies or download the binary from Releases.
+**Running:** Build from source and grab the dependencies or download the binary from Releases (requires the res folder assets).
 
 ---
 
