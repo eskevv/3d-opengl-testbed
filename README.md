@@ -21,7 +21,7 @@ Option 2. Download the binary from Releases (requires the res folder in the same
 
 ---
 
-![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/prewview.png?raw=true)
+![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.png?raw=true)
 
 **Dependencies**  
 *Add these to your search directories:*
