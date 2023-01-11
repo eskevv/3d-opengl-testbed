@@ -12,9 +12,16 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Materials & Diffuse maps
 * Interfaces to test settings  
 
-**Running:** Build from source and grab the dependencies or download the binary from Releases.
+**Running:**  
+Option 1. Build from source and grab the dependencies (builds with CMake).  
+  -> you need to adjust the CMakeLists where to search for dependencies.  
+  -> from root dir: ```cmake -B build -G Ninja && cmake --build build```  
+
+Option 2. Download the binary from Releases (requires the res folder in the same directory).
 
 ---
+
+![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/prewview.png?raw=true)
 
 **Dependencies**  
 *Add these to your search directories:*
