@@ -12,11 +12,14 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Materials & Diffuse maps
 * Interfaces for test settings
 
-
-**Dependencies**
+---
+**Dependencies**  
+*Add these to your search directories:*
 * GLFW3
 * GLAD
 * OpenGL 3.3
-* GLM
+* GLM  
+
+*Already included as header files:*  
 * Dear ImGui
 * stb_image
