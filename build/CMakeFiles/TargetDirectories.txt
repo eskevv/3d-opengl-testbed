@@ -1,3 +1,0 @@
-D:/Developer/proj_cpp/glrendering/build/CMakeFiles/glrendering.dir
-D:/Developer/proj_cpp/glrendering/build/CMakeFiles/edit_cache.dir
-D:/Developer/proj_cpp/glrendering/build/CMakeFiles/rebuild_cache.dir
