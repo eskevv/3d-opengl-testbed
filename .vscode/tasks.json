@@ -1,0 +1,28 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "type": "cppbuild",
+         "label": "buildSource",
+         "command": "g++.exe",
+         "args": [
+            "-std=c++20",
+            "-Wall",
+            "-Wpedantic",
+            "-fdiagnostics-color=always",
+            "-g",
+            "${workspaceFolder}\\*.cpp",
+            "-o",
+            "${workspaceFolder}\\${workspaceFolderBasename}.exe",
+         ],
+         "options": {
+            "cwd": "${workspaceFolder}"
+         },
+         "problemMatcher": [
+            "$gcc"
+         ],
+         "group": "build",
+         "detail": "compiler: D:\\Programs\\mingw64\\bin\\g++.exe"
+      }
+   ]
+}

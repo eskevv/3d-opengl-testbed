@@ -1,0 +1,20 @@
+# ninja log v5
+3293	3615	6951050204086683	D:/Developer/proj_cpp/glrendering/glrendering.exe	bbdaf97b74a66fc3
+16	1553	6950226324690006	CMakeFiles/glrendering.dir/src/shader.cpp.obj	738da08cefd298c7
+25	1915	6950225231689055	CMakeFiles/glrendering.dir/src/imgui/imgui_impl_opengl3.cpp.obj	e92030e3a918990b
+47	2546	6950212788876903	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_opengl3.cpp.obj	d1fc51ece2a676e4
+18	6115	6950225273654494	CMakeFiles/glrendering.dir/src/imgui/imgui.cpp.obj	d23ee5639b59771e
+44	371	6950212767135992	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_opengl2.cpp.obj	5cef081613e90ae1
+23	2353	6950223727426817	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_glfw.cpp.obj	336d8e2f5c037348
+28	4477	6950225257292968	CMakeFiles/glrendering.dir/src/imgui/imgui_widgets.cpp.obj	73f16ed37969c98b
+26	2979	6950225242322174	CMakeFiles/glrendering.dir/src/imgui/imgui_tables.cpp.obj	9a68a1273752edf2
+36	2236	6950213461937869	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_win32.cpp.obj	a18a9bf76d6786e1
+26	3958	6950212802989285	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_dx10.cpp.obj	55717e7a584c0a2e
+23	2626	6950225238802149	CMakeFiles/glrendering.dir/src/imgui/imgui_impl_glfw.cpp.obj	911ee602788ff74a
+21	4052	6950225253043925	CMakeFiles/glrendering.dir/src/imgui/imgui_draw.cpp.obj	8992ac9582c9f8f3
+14	3291	6951050200899920	CMakeFiles/glrendering.dir/src/main.cpp.obj	92088acaa1a340c5
+33	3390	6950212797291861	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_dx9.cpp.obj	5eb4aefccdb8f305
+20	2302	6950225235538337	CMakeFiles/glrendering.dir/src/imgui/imgui_demo.cpp.obj	7d07104a2cf993cc
+28	4037	6950212803800781	CMakeFiles/glrendering.dir/src/imgui/backends/imgui_impl_dx11.cpp.obj	3857d28bb4d2218a
+14	3299	6951050301139670	CMakeFiles/glrendering.dir/src/main.cpp.obj	92088acaa1a340c5
+3301	3628	6951050304384252	D:/Developer/proj_cpp/glrendering/glrendering.exe	bbdaf97b74a66fc3
