@@ -12,6 +12,11 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Materials & Diffuse maps
 * Interfaces to test settings  
 
+**To-Implement:**  
+* Models
+* Skeletal Animations
+* SkyBoxes
+
 **Running:**  
 Option 1. Build from source and grab the dependencies (builds with CMake).  
   -> you need to adjust the CMakeLists where to search for dependencies.  
