@@ -34,16 +34,16 @@ bool firstMouse = true;
 // transformations
 bool pressed{false};
 float light_speed{0.004f};
-glm::vec3 lightColor{1.0f, 0.86f, 0.73f};
-glm::vec3 specularColor{1.0f, 1.0f, 1.0f};
+glm::vec3 light_color{1.0f, 0.86f, 0.73f};
+glm::vec3 specular_color{1.0f, 1.0f, 1.0f};
 float material_shininess{30.0f};
 float ambient_intensity{0.14f};
 float diffuse_intensity{3.8f};
 float shine_intensity{8.0f};
 
 // timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+float delta_time = 0.0f;
+float last_frame = 0.0f;
 
 // lighting
 glm::vec3 lightPos(-0.19f, 1.64f, -4.1f);
@@ -119,6 +119,12 @@ int main() {
                        -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
                        0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
                        -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
+
+   glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
+                                glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
+                                glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
+                                glm::vec3(-1.3f, 1.0f, -1.5f)};
+
    // first, configure the cube's VAO (and VBO)
    unsigned int VBO, cubeVAO;
    glGenVertexArrays(1, &cubeVAO);
@@ -177,8 +183,8 @@ int main() {
       // per-frame time logic
       // --------------------
       float currentFrame = static_cast<float>(glfwGetTime());
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
+      delta_time = currentFrame - last_frame;
+      last_frame = currentFrame;
 
       // input
       // -----
@@ -199,20 +205,21 @@ int main() {
       // transformations
       glm::mat4 projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
       glm::mat4 view = camera.get_view_matrix();
-      glm::mat4 model{glm::translate(glm::mat4{1}, glm::vec3{0.0f, 0.0, -4.0f})};
-      model = {glm::rotate(model, (float)(currentFrame / 2), glm::vec3{0.0f, 0.4f, 0.0f})};
+      // glm::mat4 model{glm::translate(glm::mat4{1}, glm::vec3{0.0f, 0.0, -4.0f})};
+      // model = {glm::rotate(model, (float)(currentFrame / 2), glm::vec3{0.0f, 0.4f, 0.0f})};
 
       // uniforms
       glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
-      glm::vec3 ambientColor{lightColor * ambient_intensity};
+      glm::vec3 ambientColor{light_color * ambient_intensity};
       glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
-      specularColor = {diffuseColor * shine_intensity};
+      specular_color = {diffuseColor * shine_intensity};
+
 
       lightingShader.use();
       lightingShader.set_float("light.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
       lightingShader.set_float("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
       lightingShader.set_float("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-      lightingShader.set_float("light.specular", specularColor.x, specularColor.y, specularColor.z);
+      lightingShader.set_float("light.specular", specular_color.x, specular_color.y, specular_color.z);
 
       lightingShader.set_int("material.diffuse", 0);
       lightingShader.set_int("material.specular", 1);
@@ -222,8 +229,8 @@ int main() {
 
       lightingShader.set_matrix("projection", projection);
       lightingShader.set_matrix("view", view);
-      lightingShader.set_matrix("model", model);
-      lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
+      // lightingShader.set_matrix("model", model);
+
 
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, diffuseMap);
@@ -234,13 +241,24 @@ int main() {
 
       // render the cube
       glBindVertexArray(cubeVAO);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
+
+      // glDrawArrays(GL_TRIANGLES, 0, 36);
+      for (unsigned int i = 0; i < 10; i++) {
+         float angle = 20.0f * i;
+         glm::mat4 model = glm::mat4(1.0f);
+         model = glm::translate(model, cubePositions[i]);
+         model = glm::rotate(model, angle + currentFrame / 4.0f, glm::vec3(1.0f, 0.3f, 0.5f));
+         lightingShader.set_matrix("model", model);
+         lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
+
+         glDrawArrays(GL_TRIANGLES, 0, 36);
+      }
 
       // also draw the lamp object
       lightCubeShader.use();
-      model = glm::translate(glm::mat4{1.0f}, lightPos);
+      glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
       model = glm::scale(model, glm::vec3{0.1f}); // a smaller cube
-      lightCubeShader.set_float("lightColor", lightColor.x, lightColor.y, lightColor.z);
+      lightCubeShader.set_float("lightColor", light_color.x, light_color.y, light_color.z);
       lightCubeShader.set_matrix("projection", projection);
       lightCubeShader.set_matrix("view", view);
       lightCubeShader.set_matrix("model", model);
@@ -265,7 +283,7 @@ int main() {
          ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
          ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "Arrow Keys controls light");
          ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
-         ImGui::ColorEdit3("light color", (float *)(&lightColor)); // Edit 3 floats representing a color
+         ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
          // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
          ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 20.0f);
          ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 20.0f);
@@ -309,19 +327,19 @@ void processInput(GLFWwindow *window) {
       glfwSetWindowShouldClose(window, true);
    }
    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-      camera.process_keyboard(FORWARD, deltaTime);
+      camera.process_keyboard(FORWARD, delta_time);
    }
    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-      camera.process_keyboard(BACKWARD, deltaTime);
+      camera.process_keyboard(BACKWARD, delta_time);
    }
    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-      camera.process_keyboard(LEFT, deltaTime);
+      camera.process_keyboard(LEFT, delta_time);
    }
    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-      camera.process_keyboard(RIGHT, deltaTime);
+      camera.process_keyboard(RIGHT, delta_time);
    }
    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-      camera.process_keyboard(UP, deltaTime);
+      camera.process_keyboard(UP, delta_time);
    }
 
    glm::vec3 light_offset{0};
@@ -343,7 +361,7 @@ void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
       light_offset = glm::vec3(0.0f, -1.0f, 0.0f);
    }
-   lightPos += light_offset * deltaTime;
+   lightPos += light_offset * delta_time;
 
    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
