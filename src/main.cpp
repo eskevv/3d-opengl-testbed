@@ -214,15 +214,16 @@ int main() {
       specular_color = {diffuseColor * shine_intensity};
 
       glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
-      glm::vec3 lightPoint{view * glm::vec4{(lightPos + glm::vec3(0.0, 1.0, 0.0)), 1.0}};
-      glm::vec3 lightFront{glm::normalize(lightViewPos - lightPoint)};
+      glm::vec3 lightViewPoint{view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
+      glm::vec3 lightFront{glm::normalize(lightViewPoint - lightViewPos)};
 
-      glm::vec3 lightDirection{ view * glm::vec4{lightFront, 1.0f}};
+
 
       lightingShader.use();
       lightingShader.set_float("light.transmission", lightViewPos.x, lightViewPos.y, lightViewPos.z, 1.0f);
       lightingShader.set_float("light.direction", lightFront.x, lightFront.y, lightFront.z);
       lightingShader.set_float("light.cutoff", glm::cos(glm::radians(12.5f)));
+      lightingShader.set_float("light.outerCutoff", glm::cos(glm::radians(13.0f)));
       lightingShader.set_float("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
       lightingShader.set_float("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
       lightingShader.set_float("light.specular", specular_color.x, specular_color.y, specular_color.z);
