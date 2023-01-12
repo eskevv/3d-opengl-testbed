@@ -205,20 +205,24 @@ int main() {
       // transformations
       glm::mat4 projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
       glm::mat4 view = camera.get_view_matrix();
-      // glm::mat4 model{glm::translate(glm::mat4{1}, glm::vec3{0.0f, 0.0, -4.0f})};
-      // model = {glm::rotate(model, (float)(currentFrame / 2), glm::vec3{0.0f, 0.4f, 0.0f})};
 
       // uniforms
-      glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
+      glm::vec3 cameraFrontPos{view * glm::vec4{camera.Front, 1.0}};
       glm::vec3 ambientColor{light_color * ambient_intensity};
       glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
       glm::vec3 lightDir{-0.2f, -1.0f, -0.3f};
       specular_color = {diffuseColor * shine_intensity};
 
+      glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
+      glm::vec3 lightPoint{view * glm::vec4{(lightPos + glm::vec3(0.0, 1.0, 0.0)), 1.0}};
+      glm::vec3 lightFront{glm::normalize(lightViewPos - lightPoint)};
+
+      glm::vec3 lightDirection{ view * glm::vec4{lightFront, 1.0f}};
 
       lightingShader.use();
-      // lightingShader.set_float("light.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
       lightingShader.set_float("light.transmission", lightViewPos.x, lightViewPos.y, lightViewPos.z, 1.0f);
+      lightingShader.set_float("light.direction", lightFront.x, lightFront.y, lightFront.z);
+      lightingShader.set_float("light.cutoff", glm::cos(glm::radians(12.5f)));
       lightingShader.set_float("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
       lightingShader.set_float("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
       lightingShader.set_float("light.specular", specular_color.x, specular_color.y, specular_color.z);
@@ -250,7 +254,7 @@ int main() {
          float angle = 20.0f * i;
          glm::mat4 model = glm::mat4(1.0f);
          model = glm::translate(model, cubePositions[i]);
-         model = glm::rotate(model, angle + currentFrame / 4, glm::vec3(1.0f, 0.3f, 0.5f));
+         // model = glm::rotate(model, angle + currentFrame / 4, glm::vec3(1.0f, 0.3f, 0.5f));
          lightingShader.set_matrix("model", model);
          lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
 
