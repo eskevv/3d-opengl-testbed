@@ -16,6 +16,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
    *1. [ Directional, Point lights, Spot lights]*  
    *2. Attenuation (light perception across distances)*  
    
+* Smoothed light boundaries
 * Materials & Diffuse maps
 * Interfaces to test settings  
 
@@ -23,6 +24,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * Models
 * Skeletal Animations
 * SkyBoxes
+* Shadows
 
 **Running:**  
 *Option 1.* Build from source and grab the dependencies (builds with CMake).  
