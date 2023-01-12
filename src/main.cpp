@@ -35,11 +35,12 @@ bool firstMouse = true;
 bool pressed{false};
 float light_speed{0.004f};
 glm::vec3 light_color{1.0f, 0.86f, 0.73f};
-glm::vec3 specular_color{1.0f, 1.0f, 1.0f};
 float material_shininess{30.0f};
 float ambient_intensity{0.14f};
 float diffuse_intensity{7.8f};
 float shine_intensity{8.0f};
+float move_speed{7.0f};
+float emission_speed{3.0f};
 
 // timing
 float delta_time = 0.0f;
@@ -95,30 +96,98 @@ int main() {
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
+   glm::vec3 pointLightPositions[] = {
+      glm::vec3( 0.7f,  0.2f,  2.0f),
+      glm::vec3( 2.3f, -3.3f, -4.0f),
+      glm::vec3(-4.0f,  2.0f, -12.0f),
+      glm::vec3( 0.0f,  0.0f, -3.0f)
+   };
+
+   float plane[] = {   // positions          // normals
+                       -0.9f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
+                        0.5f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
+                        0.5f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
+                        0.5f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
+                       -0.9f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
+                       -0.9f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
+
+                       -0.9f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
+                        0.5f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
+                        0.5f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
+                        0.5f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
+                       -0.9f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
+                       -0.9f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
+
+                       -0.9f,  -0.4f,  0.5f, -1.0f, 0.0f,   0.0f,
+                       -0.9f,  -0.4f, -0.9f, -1.0f, 0.0f,   0.0f,
+                       -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,   0.0f,
+                       -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,   0.0f,
+                       -0.9f, -0.5f,  0.5f, -1.0f, 0.0f,   0.0f,
+                       -0.9f,  -0.4f,  0.5f, -1.0f, 0.0f,   0.0f,
+
+                        0.5f,  -0.4f,  0.5f,   1.0f,  0.0f,  0.0f,
+                        0.5f,  -0.4f, -0.9f,   1.0f,  0.0f,  0.0f,
+                        0.5f, -0.5f, -0.9f,   1.0f,  0.0f,  0.0f,
+                        0.5f, -0.5f, -0.9f,   1.0f,  0.0f,  0.0f,
+                        0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f,
+                        0.5f,  -0.4f,  0.5f,   1.0f,  0.0f,  0.0f,
+
+                       -0.9f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
+                        0.5f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
+                        0.5f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
+                        0.5f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
+                       -0.9f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
+                       -0.9f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
+
+                       -0.9f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f,
+                        0.5f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f,
+                        0.5f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
+                        0.5f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
+                       -0.9f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
+                       -0.9f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f };
+
    float vertices[] = {// positions          // normals           // texture coords
-                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
-                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
-                       -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
+                       0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
+                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
+                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
+                       -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
 
-                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
-                       -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+                       0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
+                       -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
 
-                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f, -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f,
-                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
-                       -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
+                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
+                       -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f,
+                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
 
-                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                       0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+                       0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f, 1.0f,
-                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
-                       -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
+                       0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f, 1.0f,
+                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
+                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
+                       -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 0.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
 
-                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
+                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+                       0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
                                 glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
@@ -129,12 +198,9 @@ int main() {
    unsigned int VBO, cubeVAO;
    glGenVertexArrays(1, &cubeVAO);
    glGenBuffers(1, &VBO);
-
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
    glBindVertexArray(cubeVAO);
-
    // position attribute
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
    glEnableVertexAttribArray(0);
@@ -145,16 +211,29 @@ int main() {
    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
    glEnableVertexAttribArray(2);
 
+
+   unsigned int planeVAO{}, planeVBO{};
+   glGenVertexArrays(1, &planeVAO);
+   glGenBuffers(1, &planeVBO);
+   glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
+   glBindVertexArray(planeVAO);
+   // position attribute
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(0 * sizeof(float)));
+   glEnableVertexAttribArray(0);
+   // normal attribute
+   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+   glEnableVertexAttribArray(1);
+
+
    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
    unsigned int lightCubeVAO;
    glGenVertexArrays(1, &lightCubeVAO);
    glBindVertexArray(lightCubeVAO);
-
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
    // note that we update the lamp's position attribute's stride to reflect the updated buffer data
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
    glEnableVertexAttribArray(0);
-
    unsigned int diffuseMap = loadTexture("res/container2.png");
    unsigned int specularMap = loadTexture("res/container2_specular.png");
    unsigned int emissionMap = loadTexture("res/matrix.jpg");
@@ -166,8 +245,6 @@ int main() {
    ImGui::CreateContext();
    ImGuiIO &io = ImGui::GetIO();
    (void)io;
-   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
    // Setup Dear ImGui style
    ImGui::StyleColorsDark();
@@ -179,66 +256,81 @@ int main() {
 
    // render loop
    // -----------
+
+
    while (!glfwWindowShouldClose(window)) {
       // per-frame time logic
       // --------------------
       float currentFrame = static_cast<float>(glfwGetTime());
       delta_time = currentFrame - last_frame;
       last_frame = currentFrame;
+      camera.MovementSpeed = move_speed;
 
       // input
       // -----
       processInput(window);
 
-      // updates
-      // -------
-      // float dir_x{cos(currentFrame)};
-      // float dir_y{sin(currentFrame)};
-      // float dir_z{cos(currentFrame)};
-      // glm::vec3 direction{glm::normalize(glm::vec3{dir_x, dir_y, 0}) * 0.02f};
-      // lightPos += direction;
-
       // render
       // ------
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      // transformations
       glm::mat4 projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
       glm::mat4 view = camera.get_view_matrix();
 
-      // uniforms
-      glm::vec3 cameraFrontPos{view * glm::vec4{camera.Front, 1.0}};
-      glm::vec3 ambientColor{light_color * ambient_intensity};
-      glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
-      glm::vec3 lightDir{-0.2f, -1.0f, -0.3f};
-      specular_color = {diffuseColor * shine_intensity};
+      // directional
+      glm::vec3 directional_light{view * glm::vec4{-0.2f, -1.0f, -0.3f, 1.0}};
+      glm::vec3 directional_ambient{glm::vec3{0.3f} * ambient_intensity};
+      glm::vec3 directional_diffuse{directional_ambient * diffuse_intensity};
+      glm::vec3 directional_specular{directional_diffuse * shine_intensity};
 
+      // spotlight
       glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
       glm::vec3 lightViewPoint{view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
       glm::vec3 lightFront{glm::normalize(lightViewPoint - lightViewPos)};
+      glm::vec3 ambientColor{light_color * ambient_intensity};
+      glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
+      glm::vec3 specular_color = diffuseColor * shine_intensity;
 
 
-
+      // set uniforms
       lightingShader.use();
-      lightingShader.set_float("light.transmission", lightViewPos.x, lightViewPos.y, lightViewPos.z, 1.0f);
-      lightingShader.set_float("light.direction", lightFront.x, lightFront.y, lightFront.z);
-      lightingShader.set_float("light.cutoff", glm::cos(glm::radians(12.5f)));
-      lightingShader.set_float("light.outerCutoff", glm::cos(glm::radians(13.0f)));
-      lightingShader.set_float("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
-      lightingShader.set_float("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-      lightingShader.set_float("light.specular", specular_color.x, specular_color.y, specular_color.z);
-      lightingShader.set_float("light.constant", 1.0f);
-      lightingShader.set_float("light.linear", 0.09f);
-      lightingShader.set_float("light.quadratic", 0.032f);
-
+      lightingShader.set_matrix("projection", projection);
+      lightingShader.set_matrix("view", view);
+      // directional uniforms
+      lightingShader.set_float("dirLight.direction", directional_light.x, directional_light.y, directional_light.z);
+      lightingShader.set_float("dirLight.ambient", directional_ambient.x, directional_ambient.y, directional_ambient.z);
+      lightingShader.set_float("dirLight.diffuse", directional_diffuse.x, directional_diffuse.y, directional_diffuse.z);
+      lightingShader.set_float("dirLight.specular", directional_specular.x, directional_specular.y, directional_specular.z);
+      // spotlight uniforms
+      lightingShader.set_float("spotLight.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
+      lightingShader.set_float("spotLight.direction", lightFront.x, lightFront.y, lightFront.z);
+      lightingShader.set_float("spotLight.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
+      lightingShader.set_float("spotLight.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
+      lightingShader.set_float("spotLight.specular", specular_color.x, specular_color.y, specular_color.z);
+      lightingShader.set_float("spotLight.constant", 1.0f);
+      lightingShader.set_float("spotLight.linear", 0.09f);
+      lightingShader.set_float("spotLight.quadratic", 0.032f);
+      lightingShader.set_float("spotLight.cutoff", glm::cos(glm::radians(12.5f)));
+      lightingShader.set_float("spotLight.outerCutoff", glm::cos(glm::radians(13.0f)));
+      // point uniforms
+      for (size_t i{0}; i < 4; i++) {
+         std::string k{std::to_string(i)};
+         glm::vec3 pos{view * glm::vec4{pointLightPositions[i], 1.0}};
+         lightingShader.set_float(("pointLights[" + k + "].position").c_str(), pos.x, pos.y, pos.z);
+         lightingShader.set_float(("pointLights[" + k + "].ambient").c_str(), ambientColor.x, ambientColor.y, ambientColor.z);
+         lightingShader.set_float(("pointLights[" + k + "].diffuse").c_str(), diffuseColor.x, diffuseColor.y, diffuseColor.z);
+         lightingShader.set_float(("pointLights[" + k + "].specular").c_str(), specular_color.x, specular_color.y, specular_color.z);
+         lightingShader.set_float(("pointLights[" + k + "].constant").c_str(), 1.0f);
+         lightingShader.set_float(("pointLights[" + k + "].linear").c_str(), 0.09f);
+         lightingShader.set_float(("pointLights[" + k + "].quadratic").c_str(), 0.032f);
+      }
+      // material uniforms
       lightingShader.set_int("material.diffuse", 0);
       lightingShader.set_int("material.specular", 1);
       lightingShader.set_int("material.emission", 2);
       lightingShader.set_float("material.shininess", material_shininess);
+      lightingShader.set_float("emissionSpeed", emission_speed);
       lightingShader.set_float("time", currentFrame);
-
-      lightingShader.set_matrix("projection", projection);
-      lightingShader.set_matrix("view", view);
 
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, diffuseMap);
@@ -249,8 +341,6 @@ int main() {
 
       // render the cube
       glBindVertexArray(cubeVAO);
-
-      // glDrawArrays(GL_TRIANGLES, 0, 36);
       for (unsigned int i = 0; i < 10; i++) {
          float angle = 20.0f * i;
          glm::mat4 model = glm::mat4(1.0f);
@@ -262,17 +352,26 @@ int main() {
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
 
-      // also draw the lamp object
+      // // also draw the lamp objects
       lightCubeShader.use();
-      glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
-      model = glm::scale(model, glm::vec3{0.1f}); // a smaller cube
-      lightCubeShader.set_float("lightColor", light_color.x, light_color.y, light_color.z);
       lightCubeShader.set_matrix("projection", projection);
       lightCubeShader.set_matrix("view", view);
-      lightCubeShader.set_matrix("model", model);
-
       glBindVertexArray(lightCubeVAO);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
+
+      // glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
+      // model = glm::scale(model, glm::vec3{0.1f});
+      // lightCubeShader.set_matrix("model", model);
+      // glDrawArrays(GL_TRIANGLES, 0, 36);
+
+      for (size_t i{0}; i < 4; i++) {
+         lightCubeShader.set_float("lightColor", light_color.x, light_color.y, light_color.z);
+
+         glm::mat4 model{glm::translate(glm::mat4{1.0f}, pointLightPositions[i])};
+         model = glm::scale(model, glm::vec3{0.3f});
+         lightCubeShader.set_matrix("model", model);
+         glDrawArrays(GL_TRIANGLES, 0, 36);
+      }
+
 
       // DearImGui
       // ---------
@@ -280,14 +379,11 @@ int main() {
       ImGui_ImplGlfw_NewFrame();
       ImGui::NewFrame();
 
-      // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
-      // ImGui!).
       bool show_demo_window = true;
       // ImGui::ShowDemoWindow(&show_demo_window);
-
-      // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
       {
          ImGui::Begin("Light Settings");
+         ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
          ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
          ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "Arrow Keys controls light");
          ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
@@ -297,6 +393,7 @@ int main() {
          ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 20.0f);
          ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 20.0f);
          ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 80.0f);
+         ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 20.0f);
 
          ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
          ImGui::End();
@@ -327,6 +424,9 @@ int main() {
    glfwTerminate();
    return 0;
 }
+// create vertices for a plane surface
+// -----------------------------------
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
