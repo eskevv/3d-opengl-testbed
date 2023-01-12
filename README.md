@@ -18,13 +18,13 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
    
 * Smoothed light boundaries
 * Materials & Diffuse maps
-* Shadows
 * Interfaces to test settings  
 
 **To-Implement:**  
 * Models
 * Skeletal Animations
 * SkyBoxes
+* Shadows
 
 **Running:**  
 *Option 1.* Build from source and grab the dependencies (builds with CMake).  
