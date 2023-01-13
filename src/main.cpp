@@ -493,17 +493,17 @@ void render_imgui() {
    // ImGui::ShowDemoWindow(&show_demo_window);
    {
       ImGui::Begin("Light Settings");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the spot light");
       ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
-      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
-      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "Arrow Keys controls light");
       ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
       ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
       // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
       ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 1.0f);
-      ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 20.0f);
-      ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 20.0f);
-      ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 80.0f);
-      ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 20.0f);
+      ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 10.0f);
+      ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 16.0f);
+      ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 40.0f);
+      ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 3.0f);
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
       ImGui::End();
