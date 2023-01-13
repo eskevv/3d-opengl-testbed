@@ -20,6 +20,9 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
+void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission);
+void render_cube(float angle, glm::vec3 position);
+void stage_setup();
 
 // settings
 const unsigned int SCR_WIDTH = 1600;
@@ -40,7 +43,26 @@ float ambient_intensity{0.14f};
 float diffuse_intensity{7.8f};
 float shine_intensity{8.0f};
 float move_speed{7.0f};
-float emission_speed{3.0f};
+float emission_speed{0.8f};
+
+Shader lightingShader;
+Shader lightCubeShader;
+glm::mat4 projection;
+glm::mat4 view;
+
+glm::vec3 lightViewPos;
+glm::vec3 lightViewPoint;
+glm::vec3 lightFront;
+glm::vec3 ambientColor;
+glm::vec3 diffuseColor;
+glm::vec3 specular_color;
+glm::vec3 directional_light;
+glm::vec3 directional_ambient;
+glm::vec3 directional_diffuse;
+glm::vec3 directional_specular;
+
+glm::vec3 pointLightPositions[] = {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(-4.0f, 2.0f, -12.0f),
+                                   glm::vec3(0.0f, 0.0f, -3.0f)};
 
 // timing
 float delta_time = 0.0f;
@@ -57,13 +79,9 @@ int main() {
    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
    // glfw window creation
    // --------------------
-   GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+   GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL TestBed", NULL, NULL);
    if (window == NULL) {
       std::cout << "Failed to create GLFW window" << std::endl;
       glfwTerminate();
@@ -91,103 +109,55 @@ int main() {
 
    // build and compile our shader zprogram
    // ------------------------------------
-   Shader lightingShader("res/shaders/lighting.vert", "res/shaders/lighting.frag");
-   Shader lightCubeShader("res/shaders/light.vert", "res/shaders/light.frag");
+   lightingShader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
+   lightCubeShader = {"res/shaders/light.vert", "res/shaders/light.frag"};
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
-   glm::vec3 pointLightPositions[] = {
-      glm::vec3( 0.7f,  0.2f,  2.0f),
-      glm::vec3( 2.3f, -3.3f, -4.0f),
-      glm::vec3(-4.0f,  2.0f, -12.0f),
-      glm::vec3( 0.0f,  0.0f, -3.0f)
-   };
 
-   float plane[] = {   // positions          // normals
-                       -0.9f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
-                        0.5f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
-                        0.5f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
-                        0.5f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
-                       -0.9f,  -0.4f, -0.9f,  0.0f,  0.0f, -1.0f,
-                       -0.9f, -0.5f, -0.9f,  0.0f,  0.0f, -1.0f,
+   float plane[] = {// positions          // normals
+                    -0.9f, -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f,
+                    0.5f,  -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f, -0.9f, -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f, -0.9f, -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f,
 
-                       -0.9f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
-                        0.5f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
-                        0.5f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
-                        0.5f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
-                       -0.9f,  -0.4f, 0.5f,   0.0f,  0.0f,  1.0f,
-                       -0.9f, -0.5f, 0.5f,   0.0f,  0.0f,  1.0f,
+                    -0.9f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,
+                    0.5f,  -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,  -0.9f, -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,  -0.9f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,
 
-                       -0.9f,  -0.4f,  0.5f, -1.0f, 0.0f,   0.0f,
-                       -0.9f,  -0.4f, -0.9f, -1.0f, 0.0f,   0.0f,
-                       -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,   0.0f,
-                       -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,   0.0f,
-                       -0.9f, -0.5f,  0.5f, -1.0f, 0.0f,   0.0f,
-                       -0.9f,  -0.4f,  0.5f, -1.0f, 0.0f,   0.0f,
+                    -0.9f, -0.4f, 0.5f,  -1.0f, 0.0f,  0.0f,  -0.9f, -0.4f, -0.9f, -1.0f, 0.0f,  0.0f,  -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,  0.0f,
+                    -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,  0.0f,  -0.9f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  -0.9f, -0.4f, 0.5f,  -1.0f, 0.0f,  0.0f,
 
-                        0.5f,  -0.4f,  0.5f,   1.0f,  0.0f,  0.0f,
-                        0.5f,  -0.4f, -0.9f,   1.0f,  0.0f,  0.0f,
-                        0.5f, -0.5f, -0.9f,   1.0f,  0.0f,  0.0f,
-                        0.5f, -0.5f, -0.9f,   1.0f,  0.0f,  0.0f,
-                        0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f,
-                        0.5f,  -0.4f,  0.5f,   1.0f,  0.0f,  0.0f,
+                    0.5f,  -0.4f, 0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.4f, -0.9f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, -0.9f, 1.0f,  0.0f,  0.0f,
+                    0.5f,  -0.5f, -0.9f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.4f, 0.5f,  1.0f,  0.0f,  0.0f,
 
-                       -0.9f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
-                        0.5f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
-                        0.5f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
-                        0.5f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
-                       -0.9f,  -0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,
-                       -0.9f,  -0.5f, -0.9f,  0.0f,  -1.0f, 0.0f,
+                    -0.9f, -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,
+                    0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.9f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.9f, -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,
 
-                       -0.9f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f,
-                        0.5f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f,
-                        0.5f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
-                        0.5f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
-                       -0.9f,  -0.4f,   0.5f,  0.0f,  1.0f,  0.0f,
-                       -0.9f,  -0.4f,  -0.9f,  0.0f,  1.0f,  0.0f };
+                    -0.9f, -0.4f, -0.9f, 0.0f,  1.0f,  0.0f,  0.5f,  -0.4f, -0.9f, 0.0f,  1.0f,  0.0f,  0.5f,  -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,
+                    0.5f,  -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,  -0.9f, -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,  -0.9f, -0.4f, -0.9f, 0.0f,  1.0f,  0.0f};
 
    float vertices[] = {// positions          // normals           // texture coords
-                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
-                       0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
-                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
-                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
-                       -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f,
-                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
+                       0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
+                       -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
 
-                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
-                       0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
-                       -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f,
-                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+                       -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
+                       -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
 
-                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
-                       -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f,
-                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
-                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
-                       -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f,
-                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
+                       -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f, -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
 
-                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-                       0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                       0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+                       0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+                       0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+                       0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
-                       0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f, 1.0f,
-                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
-                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
-                       -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 0.0f,
-                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
+                       -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f, 1.0f,
+                       0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
+                       -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
 
-                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-                       0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
+                       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
                                 glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
@@ -211,7 +181,6 @@ int main() {
    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
    glEnableVertexAttribArray(2);
 
-
    unsigned int planeVAO{}, planeVBO{};
    glGenVertexArrays(1, &planeVAO);
    glGenBuffers(1, &planeVBO);
@@ -224,7 +193,6 @@ int main() {
    // normal attribute
    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
    glEnableVertexAttribArray(1);
-
 
    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
    unsigned int lightCubeVAO;
@@ -240,7 +208,6 @@ int main() {
 
    // DearImGui
    // ---------
-   const char *glsl_version = "#version 330";
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
    ImGuiIO &io = ImGui::GetIO();
@@ -252,12 +219,10 @@ int main() {
 
    // Setup Platform/Renderer backends
    ImGui_ImplGlfw_InitForOpenGL(window, true);
-   ImGui_ImplOpenGL3_Init(glsl_version);
+   ImGui_ImplOpenGL3_Init("#version 330");
 
    // render loop
    // -----------
-
-
    while (!glfwWindowShouldClose(window)) {
       // per-frame time logic
       // --------------------
@@ -270,98 +235,31 @@ int main() {
       // -----
       processInput(window);
 
+      // updates
+      // -------
+      stage_setup();
+
       // render
       // ------
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      glm::mat4 projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
-      glm::mat4 view = camera.get_view_matrix();
-
-      // directional
-      glm::vec3 directional_light{view * glm::vec4{-0.2f, -1.0f, -0.3f, 1.0}};
-      glm::vec3 directional_ambient{glm::vec3{0.3f} * ambient_intensity};
-      glm::vec3 directional_diffuse{directional_ambient * diffuse_intensity};
-      glm::vec3 directional_specular{directional_diffuse * shine_intensity};
-
-      // spotlight
-      glm::vec3 lightViewPos{view * glm::vec4{lightPos, 1.0}};
-      glm::vec3 lightViewPoint{view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
-      glm::vec3 lightFront{glm::normalize(lightViewPoint - lightViewPos)};
-      glm::vec3 ambientColor{light_color * ambient_intensity};
-      glm::vec3 diffuseColor{ambientColor * diffuse_intensity};
-      glm::vec3 specular_color = diffuseColor * shine_intensity;
-
-
-      // set uniforms
-      lightingShader.use();
-      lightingShader.set_matrix("projection", projection);
-      lightingShader.set_matrix("view", view);
-      // directional uniforms
-      lightingShader.set_float("dirLight.direction", directional_light.x, directional_light.y, directional_light.z);
-      lightingShader.set_float("dirLight.ambient", directional_ambient.x, directional_ambient.y, directional_ambient.z);
-      lightingShader.set_float("dirLight.diffuse", directional_diffuse.x, directional_diffuse.y, directional_diffuse.z);
-      lightingShader.set_float("dirLight.specular", directional_specular.x, directional_specular.y, directional_specular.z);
-      // spotlight uniforms
-      lightingShader.set_float("spotLight.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
-      lightingShader.set_float("spotLight.direction", lightFront.x, lightFront.y, lightFront.z);
-      lightingShader.set_float("spotLight.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
-      lightingShader.set_float("spotLight.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-      lightingShader.set_float("spotLight.specular", specular_color.x, specular_color.y, specular_color.z);
-      lightingShader.set_float("spotLight.constant", 1.0f);
-      lightingShader.set_float("spotLight.linear", 0.09f);
-      lightingShader.set_float("spotLight.quadratic", 0.032f);
-      lightingShader.set_float("spotLight.cutoff", glm::cos(glm::radians(12.5f)));
-      lightingShader.set_float("spotLight.outerCutoff", glm::cos(glm::radians(13.0f)));
-      // point uniforms
-      for (size_t i{0}; i < 4; i++) {
-         std::string k{std::to_string(i)};
-         glm::vec3 pos{view * glm::vec4{pointLightPositions[i], 1.0}};
-         lightingShader.set_float(("pointLights[" + k + "].position").c_str(), pos.x, pos.y, pos.z);
-         lightingShader.set_float(("pointLights[" + k + "].ambient").c_str(), ambientColor.x, ambientColor.y, ambientColor.z);
-         lightingShader.set_float(("pointLights[" + k + "].diffuse").c_str(), diffuseColor.x, diffuseColor.y, diffuseColor.z);
-         lightingShader.set_float(("pointLights[" + k + "].specular").c_str(), specular_color.x, specular_color.y, specular_color.z);
-         lightingShader.set_float(("pointLights[" + k + "].constant").c_str(), 1.0f);
-         lightingShader.set_float(("pointLights[" + k + "].linear").c_str(), 0.09f);
-         lightingShader.set_float(("pointLights[" + k + "].quadratic").c_str(), 0.032f);
-      }
-      // material uniforms
-      lightingShader.set_int("material.diffuse", 0);
-      lightingShader.set_int("material.specular", 1);
-      lightingShader.set_int("material.emission", 2);
-      lightingShader.set_float("material.shininess", material_shininess);
-      lightingShader.set_float("emissionSpeed", emission_speed);
-      lightingShader.set_float("time", currentFrame);
-
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, diffuseMap);
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, specularMap);
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D, emissionMap);
-
-      // render the cube
+      // cubes
+      use_lighting(diffuseMap, specularMap, emissionMap);
       glBindVertexArray(cubeVAO);
       for (unsigned int i = 0; i < 10; i++) {
-         float angle = 20.0f * i;
-         glm::mat4 model = glm::mat4(1.0f);
-         model = glm::translate(model, cubePositions[i]);
-         // model = glm::rotate(model, angle + currentFrame / 4, glm::vec3(1.0f, 0.3f, 0.5f));
-         lightingShader.set_matrix("model", model);
-         lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
-
-         glDrawArrays(GL_TRIANGLES, 0, 36);
+         float angle = 20.0f * i + currentFrame / 4;
+         render_cube(angle, cubePositions[i]);
       }
 
-      // // also draw the lamp objects
+      // lamp objects
       lightCubeShader.use();
       lightCubeShader.set_matrix("projection", projection);
       lightCubeShader.set_matrix("view", view);
+      glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
+      model = glm::scale(model, glm::vec3{0.1f});
+      lightCubeShader.set_matrix("model", model);
       glBindVertexArray(lightCubeVAO);
-
-      // glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
-      // model = glm::scale(model, glm::vec3{0.1f});
-      // lightCubeShader.set_matrix("model", model);
-      // glDrawArrays(GL_TRIANGLES, 0, 36);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
 
       for (size_t i{0}; i < 4; i++) {
          lightCubeShader.set_float("lightColor", light_color.x, light_color.y, light_color.z);
@@ -371,7 +269,6 @@ int main() {
          lightCubeShader.set_matrix("model", model);
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
-
 
       // DearImGui
       // ---------
@@ -426,7 +323,6 @@ int main() {
 }
 // create vertices for a plane surface
 // -----------------------------------
-
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -551,4 +447,81 @@ unsigned int loadTexture(char const *path) {
    }
 
    return textureID;
+}
+
+void stage_setup() {
+   projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
+   view = {camera.get_view_matrix()};
+
+   // directional
+   directional_light = {view * glm::vec4{-0.2f, -1.0f, -0.3f, 1.0}};
+   directional_ambient = {glm::vec3{0.3f} * ambient_intensity};
+   directional_diffuse = {directional_ambient * diffuse_intensity};
+   directional_specular = {directional_diffuse * shine_intensity};
+
+   // spotlight
+   lightViewPos = {view * glm::vec4{lightPos, 1.0}};
+   lightViewPoint = {view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
+   lightFront = {glm::normalize(lightViewPoint - lightViewPos)};
+   ambientColor = {light_color * ambient_intensity};
+   diffuseColor = {ambientColor * diffuse_intensity};
+   specular_color = {diffuseColor * shine_intensity};
+}
+
+void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission) {
+   // set uniforms
+   lightingShader.use();
+   lightingShader.set_matrix("projection", projection);
+   lightingShader.set_matrix("view", view);
+   // directional uniforms
+   lightingShader.set_float("dirLight.direction", directional_light.x, directional_light.y, directional_light.z);
+   lightingShader.set_float("dirLight.ambient", directional_ambient.x, directional_ambient.y, directional_ambient.z);
+   lightingShader.set_float("dirLight.diffuse", directional_diffuse.x, directional_diffuse.y, directional_diffuse.z);
+   lightingShader.set_float("dirLight.specular", directional_specular.x, directional_specular.y, directional_specular.z);
+   // spotlight uniforms
+   lightingShader.set_float("spotLight.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
+   lightingShader.set_float("spotLight.direction", lightFront.x, lightFront.y, lightFront.z);
+   lightingShader.set_float("spotLight.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
+   lightingShader.set_float("spotLight.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
+   lightingShader.set_float("spotLight.specular", specular_color.x, specular_color.y, specular_color.z);
+   lightingShader.set_float("spotLight.constant", 1.0f);
+   lightingShader.set_float("spotLight.linear", 0.09f);
+   lightingShader.set_float("spotLight.quadratic", 0.032f);
+   lightingShader.set_float("spotLight.cutoff", glm::cos(glm::radians(12.5f)));
+   lightingShader.set_float("spotLight.outerCutoff", glm::cos(glm::radians(13.0f)));
+   // point uniforms
+   for (size_t i{0}; i < 4; i++) {
+      std::string k{std::to_string(i)};
+      glm::vec3 pos{view * glm::vec4{pointLightPositions[i], 1.0}};
+      lightingShader.set_float("pointLights[" + k + "].position", pos.x, pos.y, pos.z);
+      lightingShader.set_float("pointLights[" + k + "].ambient", ambientColor.x, ambientColor.y, ambientColor.z);
+      lightingShader.set_float("pointLights[" + k + "].diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
+      lightingShader.set_float("pointLights[" + k + "].specular", specular_color.x, specular_color.y, specular_color.z);
+      lightingShader.set_float("pointLights[" + k + "].constant", 1.0f);
+      lightingShader.set_float("pointLights[" + k + "].linear", 0.09f);
+      lightingShader.set_float("pointLights[" + k + "].quadratic", 0.032f);
+   }
+   // material uniforms
+   lightingShader.set_int("material.diffuse", 0);
+   lightingShader.set_int("material.specular", 1);
+   lightingShader.set_int("material.emission", 2);
+   lightingShader.set_float("material.shininess", material_shininess);
+   lightingShader.set_float("emissionSpeed", emission_speed);
+   lightingShader.set_float("time", static_cast<float>(glfwGetTime()));
+
+   glActiveTexture(GL_TEXTURE0);
+   glBindTexture(GL_TEXTURE_2D, diffuse);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, specular);
+   glActiveTexture(GL_TEXTURE2);
+   glBindTexture(GL_TEXTURE_2D, emission);
+}
+
+void render_cube(float angle, glm::vec3 position) {
+   glm::mat4 model = glm::mat4(1.0f);
+   model = glm::translate(model, position);
+   model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+   lightingShader.set_matrix("model", model);
+   lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
+   glDrawArrays(GL_TRIANGLES, 0, 36);
 }
