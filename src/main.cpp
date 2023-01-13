@@ -52,8 +52,7 @@ float shine_intensity{8.0f};
 float move_speed{7.0f};
 float emission_speed{0.33f};
 
-unsigned int VBO, cubeVAO, planeVAO{}, planeVBO{};
-unsigned int lightCubeVAO;
+unsigned int VBO{}, cubeVAO, lightCubeVAO{};
 
 Shader lightingShader;
 Shader lightCubeShader;
@@ -117,24 +116,32 @@ int main() {
                        0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
                        -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
-   glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
+   const size_t NUM_CUBES{1210};
+   glm::vec3 cubePositions[NUM_CUBES] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
                                 glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
                                 glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
                                 glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-   // first, configure the cube's VAO (and VBO)
+   unsigned const int WIDTH{40};
+   for (size_t i{10}; i < NUM_CUBES; i++) {
+      float x{(i - 10) / WIDTH};
+      float y{-6.0f};
+      float z{(i - 10) % WIDTH};
+      glm::vec3 pos{x, y, z};
+      cubePositions[i] = pos;
+   }
+
+   // cube vao
    glGenVertexArrays(1, &cubeVAO);
    glGenBuffers(1, &VBO);
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
    glBindVertexArray(cubeVAO);
-   // position attribute
+
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
    glEnableVertexAttribArray(0);
-   // normal attribute
    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
    glEnableVertexAttribArray(1);
-   // tex attribute
    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
    glEnableVertexAttribArray(2);
 
@@ -142,9 +149,9 @@ int main() {
    glGenVertexArrays(1, &lightCubeVAO);
    glBindVertexArray(lightCubeVAO);
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
    glEnableVertexAttribArray(0);
+
    unsigned int diffuseMap = load_texture("res/container2.png");
    unsigned int specularMap = load_texture("res/container2_specular.png");
    unsigned int emissionMap = load_texture("res/matrix.jpg");
@@ -174,8 +181,9 @@ int main() {
       // cubes
       use_lighting(diffuseMap, specularMap, emissionMap);
       glBindVertexArray(cubeVAO);
-      for (unsigned int i = 0; i < 10; i++) {
-         float angle = 20.0f * i + currentFrame / 4;
+      for (unsigned int i = 0; i < NUM_CUBES; i++) {
+         // float angle = 20.0f * i + currentFrame / 4;
+         float angle = 0.0f;
          render_cube(angle, cubePositions[i]);
       }
 
@@ -186,7 +194,7 @@ int main() {
       glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
       model = glm::scale(model, glm::vec3{0.1f});
       lightCubeShader.set_matrix("model", model);
-      glBindVertexArray(lightCubeVAO);
+      // glBindVertexArray(lightCubeVAO);
       glDrawArrays(GL_TRIANGLES, 0, 36);
 
       for (size_t i{0}; i < 4; i++) {
@@ -214,6 +222,7 @@ int main() {
 
    return 0;
 }
+
 // resources
 // -------------------------------------------
 void release_imgui() {
@@ -233,8 +242,8 @@ void deallocate_gl() {
    glDeleteBuffers(1, &VBO);
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+// process all input: query GLFW whether relevant keys are pressed/released this frame
+// -----------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
       glfwSetWindowShouldClose(window, true);
@@ -287,16 +296,14 @@ void processInput(GLFWwindow *window) {
    }
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
+// glfw: callbacks
+// -----------------------
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
    // make sure the viewport matches the new window dimensions; note that width and
    // height will be significantly larger than specified on retina displays.
    glViewport(0, 0, width, height);
 }
 
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
    if (pressed) return;
 
@@ -318,13 +325,52 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
    camera.process_mouse_movement(xoffset, yoffset);
 }
 
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
    camera.process_mouse_scroll(static_cast<float>(yoffset));
 }
 
-// texture loading
+// rendering
+// -----------------------
+void render_cube(float angle, glm::vec3 position) {
+   glm::mat4 model = glm::mat4(1.0f);
+   model = glm::translate(model, position);
+   model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+   lightingShader.set_matrix("model", model);
+   lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
+   glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void render_imgui() {
+   ImGui_ImplOpenGL3_NewFrame();
+   ImGui_ImplGlfw_NewFrame();
+   ImGui::NewFrame();
+
+   bool show_demo_window = true;
+   // ImGui::ShowDemoWindow(&show_demo_window);
+   {
+      ImGui::Begin("Light Settings");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the spot light");
+      ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
+      ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
+      ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
+      // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
+      ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 1.0f);
+      ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 10.0f);
+      ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 16.0f);
+      ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 40.0f);
+      ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 3.0f);
+
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      ImGui::End();
+   }
+
+   ImGui::Render();
+   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+// setup
+// -----------------------
 unsigned int load_texture(char const *path) {
    unsigned int textureID;
    glGenTextures(1, &textureID);
@@ -346,8 +392,8 @@ unsigned int load_texture(char const *path) {
 
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
       stbi_image_free(data);
    } else {
@@ -363,8 +409,8 @@ void stage_setup() {
    view = {camera.get_view_matrix()};
 
    // directional
-   directional_light = {view * glm::vec4{-0.2f, -1.0f, -0.3f, 1.0}};
-   directional_ambient = {glm::vec3{0.1f} * ambient_intensity};
+   directional_light = {-0.2f, -1.0f, -0.3f};
+   directional_ambient = {glm::vec3{0.3f} * ambient_intensity};
    directional_diffuse = {directional_ambient * diffuse_intensity};
    directional_specular = {directional_diffuse * shine_intensity};
 
@@ -426,15 +472,6 @@ void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emis
    glBindTexture(GL_TEXTURE_2D, emission);
 }
 
-void render_cube(float angle, glm::vec3 position) {
-   glm::mat4 model = glm::mat4(1.0f);
-   model = glm::translate(model, position);
-   model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-   lightingShader.set_matrix("model", model);
-   lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
-   glDrawArrays(GL_TRIANGLES, 0, 36);
-}
-
 void initialize_testbed() {
    // initialize glfw
    glfwInit();
@@ -482,33 +519,4 @@ void initialize_imgui() {
    // Setup Platform/Renderer backends
    ImGui_ImplGlfw_InitForOpenGL(window, true);
    ImGui_ImplOpenGL3_Init("#version 330");
-}
-
-void render_imgui() {
-   ImGui_ImplOpenGL3_NewFrame();
-   ImGui_ImplGlfw_NewFrame();
-   ImGui::NewFrame();
-
-   bool show_demo_window = true;
-   // ImGui::ShowDemoWindow(&show_demo_window);
-   {
-      ImGui::Begin("Light Settings");
-      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
-      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the spot light");
-      ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
-      ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
-      ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
-      // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
-      ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 1.0f);
-      ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 10.0f);
-      ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 16.0f);
-      ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 40.0f);
-      ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 3.0f);
-
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-      ImGui::End();
-   }
-
-   ImGui::Render();
-   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
