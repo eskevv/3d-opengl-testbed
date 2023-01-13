@@ -77,13 +77,13 @@ float ComputeIntensity(SpotLight light, vec3 lightDir);
 void main() {
     vec3 result = vec3(0);
 
-    // result += CalcDirLight(dirLight);
+    result += CalcDirLight(dirLight);
 
     for(int i = 0; i < NR_POINT_LIGHTS; i++) {
         result += CalcPointLight(pointLights[i]);
     }
 
-    // result += CalcSpotLight(spotLight);
+    result += CalcSpotLight(spotLight);
 
     FragColor = vec4(result, 1.0);
 }

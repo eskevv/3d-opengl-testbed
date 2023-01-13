@@ -15,11 +15,17 @@
 
 #include <iostream>
 
+void release_imgui();
+void render_imgui();
+void release_glfw();
+void deallocate_gl();
+void initialize_testbed();
+void initialize_imgui();
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
-unsigned int loadTexture(const char *path);
+unsigned int load_texture(const char *path);
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission);
 void render_cube(float angle, glm::vec3 position);
 void stage_setup();
@@ -27,6 +33,7 @@ void stage_setup();
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
+GLFWwindow *window;
 
 // camera
 Camera camera(glm::vec3(0.0f, 3.0f, 3.0f));
@@ -39,11 +46,14 @@ bool pressed{false};
 float light_speed{0.004f};
 glm::vec3 light_color{1.0f, 0.86f, 0.73f};
 float material_shininess{30.0f};
-float ambient_intensity{0.14f};
+float ambient_intensity{0.3f};
 float diffuse_intensity{7.8f};
 float shine_intensity{8.0f};
 float move_speed{7.0f};
-float emission_speed{0.8f};
+float emission_speed{0.33f};
+
+unsigned int VBO, cubeVAO, planeVAO{}, planeVBO{};
+unsigned int lightCubeVAO;
 
 Shader lightingShader;
 Shader lightCubeShader;
@@ -69,71 +79,19 @@ float delta_time = 0.0f;
 float last_frame = 0.0f;
 
 // lighting
-glm::vec3 lightPos(-0.19f, 1.64f, -4.1f);
+glm::vec3 lightPos(-1.7f, 5.5f, -7.5f);
 
 int main() {
-   // glfw: initialize and configure
-   // ------------------------------
-   glfwInit();
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+   // initialization steps
+   initialize_testbed();
+   initialize_imgui();
 
-   // glfw window creation
-   // --------------------
-   GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL TestBed", NULL, NULL);
-   if (window == NULL) {
-      std::cout << "Failed to create GLFW window" << std::endl;
-      glfwTerminate();
-      return -1;
-   }
-   glfwMakeContextCurrent(window);
-   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-   glfwSetCursorPosCallback(window, mouse_callback);
-   glfwSetScrollCallback(window, scroll_callback);
-
-   // tell GLFW to capture our mouse
-   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-   // glad: load all OpenGL function pointers
-   // ---------------------------------------
-   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-      std::cout << "Failed to initialize GLAD" << std::endl;
-      return -1;
-   }
-
-   // configure global opengl state
-   // -----------------------------
-   glEnable(GL_DEPTH_TEST);
-   glClearColor(0.085f, 0.085f, 0.085f, 1.0f);
-
-   // build and compile our shader zprogram
-   // ------------------------------------
+   // create shader programs
    lightingShader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
    lightCubeShader = {"res/shaders/light.vert", "res/shaders/light.frag"};
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
-
-   float plane[] = {// positions          // normals
-                    -0.9f, -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f,
-                    0.5f,  -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f, -0.9f, -0.4f, -0.9f, 0.0f,  0.0f,  -1.0f, -0.9f, -0.5f, -0.9f, 0.0f,  0.0f,  -1.0f,
-
-                    -0.9f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,
-                    0.5f,  -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,  -0.9f, -0.4f, 0.5f,  0.0f,  0.0f,  1.0f,  -0.9f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,
-
-                    -0.9f, -0.4f, 0.5f,  -1.0f, 0.0f,  0.0f,  -0.9f, -0.4f, -0.9f, -1.0f, 0.0f,  0.0f,  -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,  0.0f,
-                    -0.9f, -0.5f, -0.9f, -1.0f, 0.0f,  0.0f,  -0.9f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  -0.9f, -0.4f, 0.5f,  -1.0f, 0.0f,  0.0f,
-
-                    0.5f,  -0.4f, 0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.4f, -0.9f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, -0.9f, 1.0f,  0.0f,  0.0f,
-                    0.5f,  -0.5f, -0.9f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.4f, 0.5f,  1.0f,  0.0f,  0.0f,
-
-                    -0.9f, -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,
-                    0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.9f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.9f, -0.5f, -0.9f, 0.0f,  -1.0f, 0.0f,
-
-                    -0.9f, -0.4f, -0.9f, 0.0f,  1.0f,  0.0f,  0.5f,  -0.4f, -0.9f, 0.0f,  1.0f,  0.0f,  0.5f,  -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,
-                    0.5f,  -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,  -0.9f, -0.4f, 0.5f,  0.0f,  1.0f,  0.0f,  -0.9f, -0.4f, -0.9f, 0.0f,  1.0f,  0.0f};
-
    float vertices[] = {// positions          // normals           // texture coords
                        -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
                        0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
@@ -165,7 +123,6 @@ int main() {
                                 glm::vec3(-1.3f, 1.0f, -1.5f)};
 
    // first, configure the cube's VAO (and VBO)
-   unsigned int VBO, cubeVAO;
    glGenVertexArrays(1, &cubeVAO);
    glGenBuffers(1, &VBO);
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -181,45 +138,16 @@ int main() {
    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
    glEnableVertexAttribArray(2);
 
-   unsigned int planeVAO{}, planeVBO{};
-   glGenVertexArrays(1, &planeVAO);
-   glGenBuffers(1, &planeVBO);
-   glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
-   glBindVertexArray(planeVAO);
-   // position attribute
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(0 * sizeof(float)));
-   glEnableVertexAttribArray(0);
-   // normal attribute
-   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-   glEnableVertexAttribArray(1);
-
-   // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-   unsigned int lightCubeVAO;
+   // configure the light's VAO
    glGenVertexArrays(1, &lightCubeVAO);
    glBindVertexArray(lightCubeVAO);
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-   // note that we update the lamp's position attribute's stride to reflect the updated buffer data
+
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
    glEnableVertexAttribArray(0);
-   unsigned int diffuseMap = loadTexture("res/container2.png");
-   unsigned int specularMap = loadTexture("res/container2_specular.png");
-   unsigned int emissionMap = loadTexture("res/matrix.jpg");
-
-   // DearImGui
-   // ---------
-   IMGUI_CHECKVERSION();
-   ImGui::CreateContext();
-   ImGuiIO &io = ImGui::GetIO();
-   (void)io;
-
-   // Setup Dear ImGui style
-   ImGui::StyleColorsDark();
-   // ImGui::StyleColorsLight();
-
-   // Setup Platform/Renderer backends
-   ImGui_ImplGlfw_InitForOpenGL(window, true);
-   ImGui_ImplOpenGL3_Init("#version 330");
+   unsigned int diffuseMap = load_texture("res/container2.png");
+   unsigned int specularMap = load_texture("res/container2_specular.png");
+   unsigned int emissionMap = load_texture("res/matrix.jpg");
 
    // render loop
    // -----------
@@ -270,59 +198,40 @@ int main() {
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
 
-      // DearImGui
-      // ---------
-      ImGui_ImplOpenGL3_NewFrame();
-      ImGui_ImplGlfw_NewFrame();
-      ImGui::NewFrame();
+      render_imgui();
 
-      bool show_demo_window = true;
-      // ImGui::ShowDemoWindow(&show_demo_window);
-      {
-         ImGui::Begin("Light Settings");
-         ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
-         ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
-         ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "Arrow Keys controls light");
-         ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
-         ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
-         // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
-         ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 20.0f);
-         ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 20.0f);
-         ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 20.0f);
-         ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 80.0f);
-         ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 20.0f);
-
-         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-         ImGui::End();
-      }
-
-      ImGui::Render();
-      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-      // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-      // -------------------------------------------------------------------------------
+      // glfw: swap buffers and poll IO events
+      // -------------------------------------
       glfwSwapBuffers(window);
       glfwPollEvents();
    }
 
-   // optional: de-allocate all resources once they've outlived their purpose:
-   // ------------------------------------------------------------------------
-   glDeleteVertexArrays(1, &cubeVAO);
-   glDeleteVertexArrays(1, &lightCubeVAO);
-   glDeleteBuffers(1, &VBO);
+   // deallocate resources
+   // --------------------
+   deallocate_gl();
+   release_imgui();
+   release_glfw();
 
-   // glfw: terminate, clearing all previously allocated GLFW resources.
-   // ------------------------------------------------------------------
+   return 0;
+}
+// resources
+// -------------------------------------------
+void release_imgui() {
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplGlfw_Shutdown();
    ImGui::DestroyContext();
+}
 
+void release_glfw() {
    glfwDestroyWindow(window);
    glfwTerminate();
-   return 0;
 }
-// create vertices for a plane surface
-// -----------------------------------
+
+void deallocate_gl() {
+   glDeleteVertexArrays(1, &cubeVAO);
+   glDeleteVertexArrays(1, &lightCubeVAO);
+   glDeleteBuffers(1, &VBO);
+}
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -416,7 +325,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
 }
 
 // texture loading
-unsigned int loadTexture(char const *path) {
+unsigned int load_texture(char const *path) {
    unsigned int textureID;
    glGenTextures(1, &textureID);
 
@@ -455,7 +364,7 @@ void stage_setup() {
 
    // directional
    directional_light = {view * glm::vec4{-0.2f, -1.0f, -0.3f, 1.0}};
-   directional_ambient = {glm::vec3{0.3f} * ambient_intensity};
+   directional_ambient = {glm::vec3{0.1f} * ambient_intensity};
    directional_diffuse = {directional_ambient * diffuse_intensity};
    directional_specular = {directional_diffuse * shine_intensity};
 
@@ -463,7 +372,7 @@ void stage_setup() {
    lightViewPos = {view * glm::vec4{lightPos, 1.0}};
    lightViewPoint = {view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
    lightFront = {glm::normalize(lightViewPoint - lightViewPos)};
-   ambientColor = {light_color * ambient_intensity};
+   ambientColor = {glm::vec3{0.3f} * light_color * ambient_intensity};
    diffuseColor = {ambientColor * diffuse_intensity};
    specular_color = {diffuseColor * shine_intensity};
 }
@@ -524,4 +433,82 @@ void render_cube(float angle, glm::vec3 position) {
    lightingShader.set_matrix("model", model);
    lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void initialize_testbed() {
+   // initialize glfw
+   glfwInit();
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+   // window creation
+   window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL TestBed", NULL, NULL);
+   if (window == nullptr) {
+      std::cout << "Failed to create GLFW window" << std::endl;
+      glfwTerminate();
+      exit(EXIT_FAILURE);
+   }
+
+   // configure glfw
+   glfwMakeContextCurrent(window);
+   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+   glfwSetCursorPosCallback(window, mouse_callback);
+   glfwSetScrollCallback(window, scroll_callback);
+   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+   // load all OpenGL function pointers
+   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+      std::cout << "Failed to initialize GLAD" << std::endl;
+      glfwTerminate();
+      exit(EXIT_FAILURE);
+   }
+
+   // configure global opengl state
+   glEnable(GL_DEPTH_TEST);
+   glClearColor(0.085f, 0.085f, 0.085f, 1.0f);
+}
+
+void initialize_imgui() {
+   // DearImGui
+   // ---------
+   IMGUI_CHECKVERSION();
+   ImGui::CreateContext();
+   ImGuiIO &io = ImGui::GetIO();
+   (void)io;
+
+   ImGui::StyleColorsClassic();
+
+   // Setup Platform/Renderer backends
+   ImGui_ImplGlfw_InitForOpenGL(window, true);
+   ImGui_ImplOpenGL3_Init("#version 330");
+}
+
+void render_imgui() {
+   ImGui_ImplOpenGL3_NewFrame();
+   ImGui_ImplGlfw_NewFrame();
+   ImGui::NewFrame();
+
+   bool show_demo_window = true;
+   // ImGui::ShowDemoWindow(&show_demo_window);
+   {
+      ImGui::Begin("Light Settings");
+      ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "Arrow Keys controls light");
+      ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
+      ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
+      // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
+      ImGui::SliderFloat("ambient intensity", &ambient_intensity, 0.0f, 1.0f);
+      ImGui::SliderFloat("diffuse intensity", &diffuse_intensity, 0.0f, 20.0f);
+      ImGui::SliderFloat("shine intensity", &shine_intensity, 0.0f, 20.0f);
+      ImGui::SliderFloat("material shininess", &material_shininess, 0.0f, 80.0f);
+      ImGui::SliderFloat("emission speed", &emission_speed, 0.0f, 20.0f);
+
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      ImGui::End();
+   }
+
+   ImGui::Render();
+   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
