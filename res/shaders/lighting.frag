@@ -75,9 +75,7 @@ float ComputeIntensity(SpotLight light, vec3 lightDir);
 // Program
 
 void main() {
-    vec3 result = vec3(0);
-
-    result += CalcDirLight(dirLight);
+    vec3 result = CalcDirLight(dirLight);
     for(int i = 0; i < NR_POINT_LIGHTS; i++) {
         result += CalcPointLight(pointLights[i]);
     }
@@ -89,13 +87,11 @@ void main() {
 // Light Casters
 
 vec3 CalcDirLight(DirLight light) {
-    vec3 lightDir = normalize(-light.direction);
-
     vec3 ambient  = light.ambient * diffuseMap;
-    vec3 diffuse  = ComputeDiffuse(light.diffuse, lightDir);
-    vec3 specular = ComputeSpecular(light.specular, lightDir);
+    vec3 diffuse  = ComputeDiffuse(light.diffuse, -light.direction);
+    vec3 specular = ComputeSpecular(light.specular, -light.direction);
 
-    return (ambient + diffuse + specular);
+    return ambient + diffuse + specular;
 }
 
 vec3 CalcPointLight(PointLight light) {
@@ -110,7 +106,7 @@ vec3 CalcPointLight(PointLight light) {
     diffuse  *= attenuation;
     specular *= attenuation;
 
-    return (ambient + diffuse + specular);
+    return ambient + diffuse + specular;
 }
 
 vec3 CalcSpotLight(SpotLight light) {
@@ -122,11 +118,11 @@ vec3 CalcSpotLight(SpotLight light) {
     vec3 diffuse = ComputeDiffuse(light.diffuse, lightDir);
     vec3 specular = ComputeSpecular(light.specular, lightDir);
 
-    ambient  *= attenuation * intensity;
-    diffuse  *= attenuation * intensity;
+    ambient *= attenuation;
+    diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
 
-    return (ambient + diffuse + specular);
+    return ambient + diffuse + specular;
 }
 
 // Helpers
@@ -143,7 +139,7 @@ float ComputeAttenuation(vec3 position, float c, float l, float q) {
 }
 
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
-    float diffuseAngle = max(dot(Normal, lightDir), 0.0);
+    float diffuseAngle = max(dot(lightDir, Normal), 0.0);
     vec3 emissive = specularMap == vec3(0) ? vec3(1) : vec3(0);
     vec3 emission = emissionMap * emissive * diffuseAngle;
     return color * diffuseAngle * diffuseMap + emission;

@@ -47,9 +47,9 @@ float light_speed{0.004f};
 glm::vec3 light_color{1.0f, 0.86f, 0.73f};
 float material_shininess{30.0f};
 float ambient_intensity{0.3f};
-float diffuse_intensity{7.8f};
+float diffuse_intensity{3.1f};
 float shine_intensity{8.0f};
-float move_speed{7.0f};
+float move_speed{12.0f};
 float emission_speed{0.33f};
 
 unsigned int VBO{}, cubeVAO, lightCubeVAO{};
@@ -351,7 +351,7 @@ void render_imgui() {
       ImGui::Begin("Light Settings");
       ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
       ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the spot light");
-      ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 10.0f);
+      ImGui::SliderFloat("camera speed", &move_speed, 0.0f, 20.0f);
       ImGui::DragFloat3("light pos", (float *)(&lightPos), 0.05f); // Edit 3 floats representing a color
       ImGui::ColorEdit3("light color", (float *)(&light_color));   // Edit 3 floats representing a color
       // ImGui::SliderFloat("light speed", &light_speed, 0.002f, 0.080f);
@@ -405,12 +405,12 @@ unsigned int load_texture(char const *path) {
 }
 
 void stage_setup() {
-   projection = {glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)};
-   view = {camera.get_view_matrix()};
+   projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+   view = camera.get_view_matrix();
 
    // directional
-   directional_light = {-0.2f, -1.0f, -0.3f};
-   directional_ambient = {glm::vec3{0.3f} * ambient_intensity};
+   directional_light = (glm::normalize (view * (glm::vec4{0.2f, -1.0f, -1.0f, 0.0f})));
+   directional_ambient = {glm::vec3{0.4f} * ambient_intensity};
    directional_diffuse = {directional_ambient * diffuse_intensity};
    directional_specular = {directional_diffuse * shine_intensity};
 
