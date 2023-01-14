@@ -35,6 +35,7 @@ void stage_setup();
 const unsigned int SCR_WIDTH{1600};
 const unsigned int SCR_HEIGHT{1200};
 GLFWwindow *window;
+glm::vec3 clear_color{0.094f, 0.086f, 0.063f};
 
 // camera
 Camera camera{{0.0f, 3.0f, 3.0f}};
@@ -51,9 +52,9 @@ glm::mat4 view;
 DirectionalLight dir_lights[1];
 SpotLight spot_lights[1];
 PointLight point_lights[4];
-float material_shininess{0.3f};
-float emission_strength{0.3f};
-float emission_speed{0.33f};
+float material_shininess{0.15f};
+float emission_strength{1.4f};
+float emission_speed{0.45f};
 
 // opengl
 unsigned int VBO{}, cubeVAO, lightCubeVAO{};
@@ -83,7 +84,17 @@ int main() {
    point_lights[3] = PointLight{{0.0f, 0.0f, -3.0f}};
 
    // initial setup
-   spot_lights[0].enabled = true;
+   point_lights[0].enabled = true;
+   point_lights[0].color = glm::vec3{0.098f, 1.0f, 0.24f};
+   point_lights[0].ambient_strength = 0.054f;
+   point_lights[0].diffuse_strength = 9.0f;
+   point_lights[0].specular_strength = 2.743f;
+
+   point_lights[3].enabled = true;
+   point_lights[3].color = glm::vec3{1.0f, 0.129f, 0.498f};
+   point_lights[3].ambient_strength = 0.462f;
+   point_lights[3].diffuse_strength = 0.919f;
+   point_lights[3].specular_strength = 2.31f;
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
@@ -429,6 +440,7 @@ void render_imgui() {
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "By Default: All emission is affected by diffuse angle and color per light");
 
    ImGui::Separator();
+   ImGui::ColorEdit3("Clear Color", (float *)&clear_color);
    ImGui::SliderFloat("Camera Speed", &move_speed, 0.0f, 50.0f);
    ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 1.0f);
    ImGui::SliderFloat("Emission Speed", &emission_speed, 0.0f, 10.0f);
@@ -489,6 +501,7 @@ unsigned int load_texture(char const *path) {
 }
 
 void stage_setup() {
+   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
    projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
    view = camera.get_view_matrix();
 }
@@ -611,7 +624,7 @@ void initialize_testbed() {
 
    // configure global opengl state
    glEnable(GL_DEPTH_TEST);
-   glClearColor(0.085f, 0.085f, 0.085f, 1.0f);
+   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
 }
 
 void initialize_imgui() {
