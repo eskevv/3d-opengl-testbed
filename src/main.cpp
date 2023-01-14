@@ -509,7 +509,6 @@ void apply_directional(const DirectionalLight &light, unsigned int place) {
 }
 
 void apply_spotlight(const SpotLight &light, unsigned int place) {
-   // come back fix direction doesnt require view point
    glm::vec3 position = {view * glm::vec4{light.position, 1.0}};
    glm::vec3 light_dir = {glm::normalize(view * glm::vec4{light.direction, 0.0f})};
    glm::vec3 ambient = {light.color * light.ambient_strength};
