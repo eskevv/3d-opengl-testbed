@@ -141,7 +141,7 @@ float ComputeAttenuation(vec3 position, float c, float l, float q) {
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
     float diffuseAngle = max(dot(lightDir, Normal), 0.0);
     vec3 emissive = specularMap == vec3(0) ? vec3(1) : vec3(0);
-    vec3 emission = emissionMap * emissive * diffuseAngle;
+    vec3 emission = emissionMap * emissive;
     return color * diffuseAngle * diffuseMap + emission;
 }
 
