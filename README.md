@@ -4,7 +4,7 @@ This project is used to test OpenGL features and rendering techniques in hopes o
 
 In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-Access) functions.
 
-**What you can currently see in this test bed:**
+**What's currently in the build:**
 * 3D transformations:  
 
    *1. [ Eular Angles, Panning , Movement ]*  
@@ -18,7 +18,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
    
 * Smoothed light boundaries
 * Materials & Diffuse maps
-* Interfaces to test settings  
+* Interface editor 
 
 **To-Implement:**  
 * Models
@@ -26,26 +26,22 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * SkyBoxes
 * Shadows
 
-**Running:**  
-*Option 1.* Build from source and grab the dependencies (builds with CMake).  
->*1. you need to adjust the CMakeLists where to search for dependencies.*  
->*2. from root dir: ```cmake -B build -G Ninja && cmake --build build```*  
-
-*Option 2.* Download the binary from Releases (requires the res folder in the same directory).
-
----
-
 ![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.png?raw=true)
 
-**Dependencies**  
-*Requires:*
-* OpenGL 3.3+
 
-*Add these to your search directories:*
-* GLFW3
-* GLAD
-* GLM  
+---
+### Running: 
+*Option 1.* Build from source and grab the dependencies (builds with CMake).  
+>*1. (optional) adjust the CMakeLists where to search for dependencies.*  
+>*2. from root dir (using Ninja): ```cmake -B build -G Ninja && cmake --build build```*  
 
-*Already included as header files:*  
-* Dear ImGui
-* stb_image
+*Option 2.* (not always up to date) Download the binary from Releases 
+>*1. requires the res folder in the same directory.*
+
+**Dependencies (already linked)**  
+* *OpenGL 3.3+*
+* *GLFW3*    
+* *GLAD*  
+* *GLM*  
+* *Dear ImGui*  
+* *stb_image*  
