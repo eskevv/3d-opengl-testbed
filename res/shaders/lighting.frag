@@ -59,6 +59,7 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform Material material;
 uniform float time;
 uniform float emissionSpeed;
+uniform float emissionStrength;
 
 // Definitions
 
@@ -126,7 +127,7 @@ vec3 CalcPointLight(PointLight light) {
 vec3 CalcSpotLight(SpotLight light) {
     vec3 lightDir = normalize(light.position - FragPos);
     float attenuation = ComputeAttenuation(light.position, light.constant, light.linear, light.quadratic);
-    float intensity = ComputeIntensity(light, lightDir);
+    float intensity = ComputeIntensity(light, -lightDir);
 
     vec3 ambient  = light.ambient * diffuseMap;
     vec3 diffuse = ComputeDiffuse(light.diffuse, lightDir);
@@ -154,8 +155,9 @@ float ComputeAttenuation(vec3 position, float c, float l, float q) {
 
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
     float diffuseAngle = max(dot(lightDir, Normal), 0.0);
-    vec3 emissive = specularMap == vec3(0) ? vec3(1) : vec3(0);
-    vec3 emission = emissionMap * emissive;
+    vec3 emissivenes = emissionMap * (specularMap == vec3(0) ? vec3(1) : vec3(0));
+    vec3 emission = emissivenes * (color * emissionStrength) * diffuseAngle;
+
     return color * diffuseAngle * diffuseMap + emission;
 }
 

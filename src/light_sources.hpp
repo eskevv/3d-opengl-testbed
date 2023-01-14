@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 
 struct LightSource {
-   bool enabled{true};
+   bool enabled{false};
    glm::vec3 color{1.0f, 1.0f, 1.0f};
    float ambient_strength{0.3f};
    float diffuse_strength{2.0f};
@@ -13,12 +13,12 @@ struct LightSource {
 
 struct PointLight : LightSource {
    PointLight() {}
-   PointLight(glm::vec3 position) : position{position}, constant{1.0f}, linear{0.09f}, quadratic{0.032f} {}
+   PointLight(glm::vec3 position) : position{position} {}
 
    glm::vec3 position;
-   float constant;
-   float linear;
-   float quadratic;
+   float constant{1.0f};
+   float linear{0.09f};
+   float quadratic{0.032f};
 };
 
 struct DirectionalLight : LightSource {
@@ -29,15 +29,14 @@ struct DirectionalLight : LightSource {
 
 struct SpotLight : LightSource {
    SpotLight() {}
-   SpotLight(glm::vec3 position, glm::vec3 direction)
-       : position{position}, direction{direction}, constant{1.0f}, linear{0.09f}, quadratic{0.032f} {}
+   SpotLight(glm::vec3 position, glm::vec3 direction) : position{position}, direction{direction} {}
 
    glm::vec3 position;
    glm::vec3 direction;
 
-   float constant;
-   float linear;
-   float quadratic;
+   float constant{1.0f};
+   float linear{0.09f};
+   float quadratic{0.032f};
 
    float cutoff{12.5f};
    float outer_cutoff{13.0f};

@@ -42,7 +42,7 @@ float move_speed{12.0f};
 float lastX{SCR_WIDTH / 2.0f};
 float lastY{SCR_HEIGHT / 2.0f};
 bool firstMouse{true};
-bool pressed{false};
+bool show_gui{true};
 
 glm::mat4 projection;
 glm::mat4 view;
@@ -52,6 +52,7 @@ DirectionalLight dir_lights[1];
 SpotLight spot_lights[1];
 PointLight point_lights[4];
 float material_shininess{0.3f};
+float emission_strength{0.3f};
 float emission_speed{0.33f};
 
 // opengl
@@ -74,12 +75,15 @@ int main() {
 
    dir_lights[0] = DirectionalLight{{0.0f, -1.0f, -0.3f}};
 
-   spot_lights[0] = SpotLight{{0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, -0.3f}};
+   spot_lights[0] = SpotLight{{2.6f, 0.0f, 5.3f}, {0.0f, -1.0f, 0.0f}};
 
    point_lights[0] = PointLight{{0.7f, 0.2f, 2.0f}};
    point_lights[1] = PointLight{{2.3f, -3.3f, -4.0f}};
    point_lights[2] = PointLight{{-4.0f, 2.0f, -12.0f}};
    point_lights[3] = PointLight{{0.0f, 0.0f, -3.0f}};
+
+   // initial setup
+   spot_lights[0].enabled = true;
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
@@ -180,13 +184,23 @@ int main() {
 
       // lamp objects
       lightCubeShader.use();
-      lightCubeShader.set_matrix("projection", projection);
       lightCubeShader.set_matrix("view", view);
-      glm::mat4 model = glm::translate(glm::mat4{1.0f}, spot_lights[0].position);
-      model = glm::scale(model, glm::vec3{0.1f});
-      lightCubeShader.set_matrix("model", model);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
+      lightCubeShader.set_matrix("projection", projection);
 
+      // spotlights
+      for (size_t i{0}; i < 1; i++) {
+         if (!spot_lights[i].enabled) continue;
+
+         glm::vec3 color{spot_lights[i].color};
+         glm::mat4 model = glm::translate(glm::mat4{1.0f}, spot_lights[i].position);
+         model = glm::scale(model, glm::vec3{0.1f});
+
+         lightCubeShader.set_float("lightColor", color.x, color.y, color.z);
+         lightCubeShader.set_matrix("model", model);
+         glDrawArrays(GL_TRIANGLES, 0, 36);
+      }
+
+      // point lights
       for (size_t i{0}; i < 4; i++) {
          if (!point_lights[i].enabled) continue;
 
@@ -280,12 +294,12 @@ void processInput(GLFWwindow *window) {
 
    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-      pressed = true;
+      show_gui = true;
       firstMouse = true;
    }
    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-      pressed = false;
+      show_gui = false;
    }
 }
 
@@ -297,7 +311,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
 }
 
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
-   if (pressed) return;
+   if (show_gui) return;
 
    float xpos = static_cast<float>(xposIn);
    float ypos = static_cast<float>(yposIn);
@@ -340,8 +354,8 @@ void header_point(const char *label, PointLight *point_light) {
          ImGui::DragFloat3("Position", (float *)(&point_light->position), 0.1f);
          ImGui::ColorEdit3("Color", (float *)(&point_light->color));
          ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 10.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
          ImGui::EndTable();
       }
    }
@@ -355,8 +369,8 @@ void header_dir(const char *label, DirectionalLight *directional_light) {
          ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.1f);
          ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
          ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
          ImGui::EndTable();
       }
    }
@@ -371,14 +385,16 @@ void header_spot(const char *label, SpotLight *spot_light) {
          ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.1f);
          ImGui::ColorEdit3("Color", (float *)(&spot_light->color));
          ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 1.0f);
-         ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
          ImGui::EndTable();
       }
    }
 }
 
 void render_imgui() {
+   if (!show_gui) return;
+
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
@@ -410,10 +426,13 @@ void render_imgui() {
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "AMBIENT: Anything in range of the light (directional is global)");
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "DIFFUSE: Color intensity affected by the angle of the light");
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "SPECULAR: Shiny or glosiness effect perceived by a view space angle");
+   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "By Default: All emission is affected by diffuse angle and color per light");
 
    ImGui::Separator();
    ImGui::SliderFloat("Camera Speed", &move_speed, 0.0f, 50.0f);
-   ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 5.0f);
+   ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 1.0f);
+   ImGui::SliderFloat("Emission Speed", &emission_speed, 0.0f, 10.0f);
+   ImGui::SliderFloat("Emission Strength", &emission_strength, 0.0f, 10.0f);
 
    ImGui::Separator();
    for (size_t i{0}; i < 1; i++) {
@@ -477,8 +496,8 @@ void stage_setup() {
 void apply_directional(const DirectionalLight &light, unsigned int place) {
    glm::vec3 direction{glm::normalize(view * glm::vec4{light.direction, 0.0f})};
    glm::vec3 ambient{light.color * light.ambient_strength};
-   glm::vec3 diffuse{light.color * light.diffuse_strength};
-   glm::vec3 specular{light.color * light.specular_strength};
+   glm::vec3 diffuse{ambient * light.diffuse_strength};
+   glm::vec3 specular{diffuse * light.specular_strength};
 
    // uniforms
    std::string k{std::to_string(place)};
@@ -492,17 +511,16 @@ void apply_directional(const DirectionalLight &light, unsigned int place) {
 void apply_spotlight(const SpotLight &light, unsigned int place) {
    // come back fix direction doesnt require view point
    glm::vec3 position = {view * glm::vec4{light.position, 1.0}};
-   glm::vec3 lightViewPoint = {view * glm::vec4{light.position + light.direction, 1.0}};
-   glm::vec3 lightFront = {glm::normalize(lightViewPoint - position)};
+   glm::vec3 light_dir = {glm::normalize(view * glm::vec4{light.direction, 0.0f})};
    glm::vec3 ambient = {light.color * light.ambient_strength};
-   glm::vec3 diffuse = {light.color * light.diffuse_strength};
-   glm::vec3 specular = {light.color * light.specular_strength};
+   glm::vec3 diffuse = {ambient * light.diffuse_strength};
+   glm::vec3 specular = {diffuse * light.specular_strength};
 
    // uniforms
    std::string k{std::to_string(place)};
    lightingShader.set_bool("spotLights[" + k + "].enabled", light.enabled);
    lightingShader.set_float("spotLights[" + k + "].position", position.x, position.y, position.z);
-   lightingShader.set_float("spotLights[" + k + "].direction", lightFront.x, lightFront.y, lightFront.z);
+   lightingShader.set_float("spotLights[" + k + "].direction", light_dir.x, light_dir.y, light_dir.z);
    lightingShader.set_float("spotLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
    lightingShader.set_float("spotLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
    lightingShader.set_float("spotLights[" + k + "].specular", specular.x, specular.y, specular.z);
@@ -516,8 +534,8 @@ void apply_spotlight(const SpotLight &light, unsigned int place) {
 void apply_pointlight(const PointLight &light, unsigned int place) {
    glm::vec3 pos{view * glm::vec4{light.position, 1.0}};
    glm::vec3 ambient{light.color * light.ambient_strength};
-   glm::vec3 diffuse{light.color * light.diffuse_strength};
-   glm::vec3 specular{light.color * light.specular_strength};
+   glm::vec3 diffuse{ambient * light.diffuse_strength};
+   glm::vec3 specular{diffuse * light.specular_strength};
 
    // uniforms
    std::string k{std::to_string(place)};
@@ -552,6 +570,7 @@ void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emis
    lightingShader.set_int("material.emission", 2);
    lightingShader.set_float("material.shininess", 1.0f / material_shininess);
    lightingShader.set_float("emissionSpeed", emission_speed);
+   lightingShader.set_float("emissionStrength", emission_strength);
    lightingShader.set_float("time", static_cast<float>(glfwGetTime()));
 
    glActiveTexture(GL_TEXTURE0);
@@ -582,7 +601,7 @@ void initialize_testbed() {
    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
    glfwSetCursorPosCallback(window, mouse_callback);
    glfwSetScrollCallback(window, scroll_callback);
-   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
    // load all OpenGL function pointers
    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
