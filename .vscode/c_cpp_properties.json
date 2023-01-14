@@ -13,7 +13,7 @@
             ],
             "compilerPath": "D:/Programs/mingw64/bin/g++.exe",
             "cStandard": "gnu17",
-            "intelliSenseMode": "windows-clang-x64",
+            "intelliSenseMode":"windows-gcc-x64",
             "cppStandard": "c++20"
         }
     ],

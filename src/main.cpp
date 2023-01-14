@@ -7,13 +7,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "shader.hpp"
-#include "camera.hpp"
+#include <iostream>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <iostream>
+#include "shader.hpp"
+#include "camera.hpp"
+#include "light_sources.hpp"
 
 void release_imgui();
 void render_imgui();
@@ -31,65 +33,36 @@ void render_cube(float angle, glm::vec3 position);
 void stage_setup();
 
 // settings
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1200;
+const unsigned int SCR_WIDTH{1600};
+const unsigned int SCR_HEIGHT{1200};
 GLFWwindow *window;
 
 // camera
-Camera camera(glm::vec3(0.0f, 3.0f, 3.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
-
-// transformations
-bool pressed{false};
-float light_speed{0.004f};
-glm::vec3 light_color{1.0f, 0.86f, 0.73f};
-float material_shininess{0.3f};
-float ambient_intensity{0.3f};
-float diffuse_intensity{3.1f};
-
-bool directional_light_on{true};
-glm::vec3 directional_color{1.0f};
-float directional_ambient_i{0.2f};
-float directional_diffuse_i{0.6f};
-float directional_specular_i{0.5f};
-glm::vec3 light_direction{0.2f, -1.0f, -1.0f};
-glm::vec3 directional_light;
-glm::vec3 directional_ambient;
-glm::vec3 directional_diffuse;
-glm::vec3 directional_specular;
-
-float spec_intensity{1.0f};
+Camera camera{{0.0f, 3.0f, 3.0f}};
 float move_speed{12.0f};
-float emission_speed{0.33f};
+float lastX{SCR_WIDTH / 2.0f};
+float lastY{SCR_HEIGHT / 2.0f};
+bool firstMouse{true};
+bool pressed{false};
 
-bool point_light_states[4]{true, true, true, true};
-glm::vec3 point_light_colors[4]{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
-bool spot_light_on{true};
-glm::vec3 pointLightPositions[] = {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(-4.0f, 2.0f, -12.0f),
-                                   glm::vec3(0.0f, 0.0f, -3.0f)};
-
-unsigned int VBO{}, cubeVAO, lightCubeVAO{};
-
-Shader lightingShader;
-Shader lightCubeShader;
 glm::mat4 projection;
 glm::mat4 view;
 
-glm::vec3 lightViewPos;
-glm::vec3 lightViewPoint;
-glm::vec3 lightFront;
-glm::vec3 ambientColor;
-glm::vec3 diffuseColor;
-glm::vec3 specular_color;
+// light
+DirectionalLight dir_lights[1];
+SpotLight spot_lights[1];
+PointLight point_lights[4];
+float material_shininess{0.3f};
+float emission_speed{0.33f};
+
+// opengl
+unsigned int VBO{}, cubeVAO, lightCubeVAO{};
+Shader lightingShader;
+Shader lightCubeShader;
 
 // timing
 float delta_time = 0.0f;
 float last_frame = 0.0f;
-
-// lighting
-glm::vec3 lightPos(-1.7f, 5.5f, -7.5f);
 
 int main() {
    // initialization steps
@@ -99,6 +72,15 @@ int main() {
    // create shader programs
    lightingShader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
    lightCubeShader = {"res/shaders/light.vert", "res/shaders/light.frag"};
+
+   dir_lights[0] = DirectionalLight{{0.0f, -1.0f, -0.3f}};
+
+   spot_lights[0] = SpotLight{{0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, -0.3f}};
+
+   point_lights[0] = PointLight{{0.7f, 0.2f, 2.0f}};
+   point_lights[1] = PointLight{{2.3f, -3.3f, -4.0f}};
+   point_lights[2] = PointLight{{-4.0f, 2.0f, -12.0f}};
+   point_lights[3] = PointLight{{0.0f, 0.0f, -3.0f}};
 
    // set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
@@ -201,18 +183,19 @@ int main() {
       lightCubeShader.use();
       lightCubeShader.set_matrix("projection", projection);
       lightCubeShader.set_matrix("view", view);
-      glm::mat4 model = glm::translate(glm::mat4{1.0f}, lightPos);
+      glm::mat4 model = glm::translate(glm::mat4{1.0f}, spot_lights[0].position);
       model = glm::scale(model, glm::vec3{0.1f});
       lightCubeShader.set_matrix("model", model);
-      // glBindVertexArray(lightCubeVAO);
       glDrawArrays(GL_TRIANGLES, 0, 36);
 
       for (size_t i{0}; i < 4; i++) {
-         if (!point_light_states[i]) continue;
-         glm::vec3 color{point_light_colors[i]};
-         lightCubeShader.set_float("lightColor", color.x, color.y, color.z);
-         glm::mat4 model{glm::translate(glm::mat4{1.0f}, pointLightPositions[i])};
+         if (!point_lights[i].enabled) continue;
+
+         glm::vec3 color{point_lights[i].color};
+         glm::mat4 model{glm::translate(glm::mat4{1.0f}, point_lights[i].position)};
          model = glm::scale(model, glm::vec3{0.3f});
+
+         lightCubeShader.set_float("lightColor", color.x, color.y, color.z);
          lightCubeShader.set_matrix("model", model);
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
@@ -294,7 +277,7 @@ void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
       light_offset += glm::vec3(0.0f, -1.0f, 0.0f);
    }
-   lightPos += light_offset * delta_time;
+   spot_lights[0].position += light_offset * delta_time;
 
    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -310,8 +293,7 @@ void processInput(GLFWwindow *window) {
 // glfw: callbacks
 // -----------------------
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
-   // make sure the viewport matches the new window dimensions; note that width and
-   // height will be significantly larger than specified on retina displays.
+   // width and height will be significantly larger than specified on retina displays.
    glViewport(0, 0, width, height);
 }
 
@@ -351,37 +333,49 @@ void render_cube(float angle, glm::vec3 position) {
    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-void header_point(const char *label, glm::vec3 *pos, glm::vec3 *color, float *ambient, float *diffuse, float *specular, bool *on) {
+void header_point(const char *label, PointLight *point_light) {
    if (ImGui::CollapsingHeader(label)) {
-      ImGui::Checkbox("Enabled", on);
-      ImGui::DragFloat3("Position", (float *)(pos), 0.1f);
-      ImGui::ColorEdit3("Color", (float *)(color));
-      ImGui::SliderFloat("Ambient Strength", ambient, 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", diffuse, 0.0f, 1.0f);
-      ImGui::SliderFloat("Specular Strength", specular, 0.0f, 1.0f);
+      if (ImGui::BeginTable("POINTLIGHT", 1)) {
+         ImGui::TableNextColumn();
+         ImGui::Checkbox("Enabled", (bool *)(&point_light->enabled));
+         ImGui::DragFloat3("Position", (float *)(&point_light->position), 0.1f);
+         ImGui::ColorEdit3("Color", (float *)(&point_light->color));
+         ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 1.0f);
+         ImGui::EndTable();
+      }
    }
 }
 
-void header_dir(const char *label, glm::vec3 *dir, glm::vec3 *color, float *ambient, float *diffuse, float *specular, bool *on) {
+void header_dir(const char *label, DirectionalLight *directional_light) {
    if (ImGui::CollapsingHeader(label)) {
-      ImGui::Checkbox("Enabled", on);
-      ImGui::DragFloat3("Direction", (float *)(dir), 0.1f);
-      ImGui::ColorEdit3("Color", (float *)(color));
-      ImGui::SliderFloat("Ambient Strength", ambient, 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", diffuse, 0.0f, 10.0f);
-      ImGui::SliderFloat("Specular Strength", specular, 0.0f, 20.0f);
+      if (ImGui::BeginTable("DIRECTIONAL", 1)) {
+         ImGui::TableNextColumn();
+         ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
+         ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.1f);
+         ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
+         ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 1.0f);
+         ImGui::EndTable();
+      }
    }
 }
 
-void header_spot(const char *label, glm::vec3 *pos, glm::vec3 *dir, glm::vec3 *color, float *ambient, float *diffuse, float *specular, bool *on) {
+void header_spot(const char *label, SpotLight *spot_light) {
    if (ImGui::CollapsingHeader(label)) {
-      ImGui::Checkbox("Enabled", on);
-      ImGui::DragFloat3("Position", (float *)(pos), 0.1f);
-      ImGui::DragFloat3("Direction", (float *)(dir), 0.1f);
-      ImGui::ColorEdit3("Color", (float *)(color));
-      ImGui::SliderFloat("Ambient Strength", ambient, 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", diffuse, 0.0f, 1.0f);
-      ImGui::SliderFloat("Specular Strength", specular, 0.0f, 1.0f);
+      if (ImGui::BeginTable("SPOTLIGHT", 1)) {
+         ImGui::TableNextColumn();
+         ImGui::Checkbox("Enabled", (bool *)(&spot_light->enabled));
+         ImGui::DragFloat3("Position", (float *)(&spot_light->position), 0.1f);
+         ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.1f);
+         ImGui::ColorEdit3("Color", (float *)(&spot_light->color));
+         ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 1.0f);
+         ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 1.0f);
+         ImGui::EndTable();
+      }
    }
 }
 
@@ -409,7 +403,7 @@ void render_imgui() {
    }
 
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
-   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the spot light");
+   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the first spot light (will implement cycling)");
    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: What may appear to be shadows is linear mipmapping over steel borders.");
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -422,22 +416,18 @@ void render_imgui() {
    ImGui::SliderFloat("Camera Speed", &move_speed, 0.0f, 50.0f);
    ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 5.0f);
 
-   header_dir("Directional Lighting", &light_direction, &directional_color, &directional_ambient_i, &directional_diffuse_i, &directional_specular_i,
-              &directional_light_on);
-
-   header_point("Point Light #1", &pointLightPositions[0], &point_light_colors[0], &ambient_intensity, &diffuse_intensity, &spec_intensity,
-                &point_light_states[0]);
-
-   header_point("Point Light #2", &pointLightPositions[1], &point_light_colors[1], &ambient_intensity, &diffuse_intensity, &spec_intensity,
-                &point_light_states[1]);
-
-   header_point("Point Light #3", &pointLightPositions[2], &point_light_colors[2], &ambient_intensity, &diffuse_intensity, &spec_intensity,
-                &point_light_states[2]);
-
-   header_point("Point Light #4", &pointLightPositions[3], &point_light_colors[3], &ambient_intensity, &diffuse_intensity, &spec_intensity,
-                &point_light_states[3]);
-
-   header_spot("Spot Light", &lightPos, &lightFront, &light_color, &ambient_intensity, &diffuse_intensity, &spec_intensity, &spot_light_on);
+   ImGui::Separator();
+   for (size_t i{0}; i < 1; i++) {
+      header_dir(("Directional Light #" + std::to_string(i + 1)).c_str(), &dir_lights[i]);
+   }
+   ImGui::Separator();
+   for (size_t i{0}; i < 1; i++) {
+      header_spot(("Spot Light #" + std::to_string(i + 1)).c_str(), &spot_lights[i]);
+   }
+   ImGui::Separator();
+   for (size_t i{0}; i < 4; i++) {
+      header_point(("Point Light #" + std::to_string(i + 1)).c_str(), &point_lights[i]);
+   }
 
    ImGui::End();
 
@@ -483,56 +473,80 @@ unsigned int load_texture(char const *path) {
 void stage_setup() {
    projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
    view = camera.get_view_matrix();
+}
 
-   // directional
-   directional_light = {glm::normalize(view * glm::vec4{light_direction, 0.0f})};
-   directional_ambient = {directional_color * directional_ambient_i};
-   directional_diffuse = {directional_ambient * directional_diffuse_i};
-   directional_specular = {directional_diffuse * directional_specular_i};
+void apply_directional(const DirectionalLight &light, unsigned int place) {
+   glm::vec3 direction{glm::normalize(view * glm::vec4{light.direction, 0.0f})};
+   glm::vec3 ambient{light.color * light.ambient_strength};
+   glm::vec3 diffuse{light.color * light.diffuse_strength};
+   glm::vec3 specular{light.color * light.specular_strength};
 
-   // spotlight
-   lightViewPos = {view * glm::vec4{lightPos, 1.0}};
-   lightViewPoint = {view * glm::vec4{lightPos + glm::vec3{0.0, 1.0, 0.0}, 1.0}};
-   lightFront = {glm::normalize(lightViewPoint - lightViewPos)};
-   ambientColor = {glm::vec3{0.3f} * light_color * ambient_intensity};
-   diffuseColor = {ambientColor * diffuse_intensity};
-   specular_color = {diffuseColor * spec_intensity};
+   // uniforms
+   std::string k{std::to_string(place)};
+   lightingShader.set_bool("dirLights[" + k + "].enabled", light.enabled);
+   lightingShader.set_float("dirLights[" + k + "].direction", direction.x, direction.y, direction.z);
+   lightingShader.set_float("dirLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lightingShader.set_float("dirLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lightingShader.set_float("dirLights[" + k + "].specular", specular.x, specular.y, specular.z);
+}
+
+void apply_spotlight(const SpotLight &light, unsigned int place) {
+   // come back fix direction doesnt require view point
+   glm::vec3 position = {view * glm::vec4{light.position, 1.0}};
+   glm::vec3 lightViewPoint = {view * glm::vec4{light.position + light.direction, 1.0}};
+   glm::vec3 lightFront = {glm::normalize(lightViewPoint - position)};
+   glm::vec3 ambient = {light.color * light.ambient_strength};
+   glm::vec3 diffuse = {light.color * light.diffuse_strength};
+   glm::vec3 specular = {light.color * light.specular_strength};
+
+   // uniforms
+   std::string k{std::to_string(place)};
+   lightingShader.set_bool("spotLights[" + k + "].enabled", light.enabled);
+   lightingShader.set_float("spotLights[" + k + "].position", position.x, position.y, position.z);
+   lightingShader.set_float("spotLights[" + k + "].direction", lightFront.x, lightFront.y, lightFront.z);
+   lightingShader.set_float("spotLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lightingShader.set_float("spotLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lightingShader.set_float("spotLights[" + k + "].specular", specular.x, specular.y, specular.z);
+   lightingShader.set_float("spotLights[" + k + "].constant", light.constant);
+   lightingShader.set_float("spotLights[" + k + "].linear", light.linear);
+   lightingShader.set_float("spotLights[" + k + "].quadratic", light.quadratic);
+   lightingShader.set_float("spotLights[" + k + "].cutoff", glm::cos(glm::radians(light.cutoff)));
+   lightingShader.set_float("spotLights[" + k + "].outerCutoff", glm::cos(glm::radians(light.outer_cutoff)));
+}
+
+void apply_pointlight(const PointLight &light, unsigned int place) {
+   glm::vec3 pos{view * glm::vec4{light.position, 1.0}};
+   glm::vec3 ambient{light.color * light.ambient_strength};
+   glm::vec3 diffuse{light.color * light.diffuse_strength};
+   glm::vec3 specular{light.color * light.specular_strength};
+
+   // uniforms
+   std::string k{std::to_string(place)};
+   lightingShader.set_bool("pointLights[" + k + "].enabled", light.enabled);
+   lightingShader.set_float("pointLights[" + k + "].position", pos.x, pos.y, pos.z);
+   lightingShader.set_float("pointLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lightingShader.set_float("pointLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lightingShader.set_float("pointLights[" + k + "].specular", specular.x, specular.y, specular.z);
+   lightingShader.set_float("pointLights[" + k + "].constant", light.constant);
+   lightingShader.set_float("pointLights[" + k + "].linear", light.linear);
+   lightingShader.set_float("pointLights[" + k + "].quadratic", light.quadratic);
 }
 
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission) {
-   // set uniforms
    lightingShader.use();
    lightingShader.set_matrix("projection", projection);
    lightingShader.set_matrix("view", view);
-   // directional uniforms
-   lightingShader.set_float("dirLight.direction", directional_light.x, directional_light.y, directional_light.z);
-   lightingShader.set_float("dirLight.ambient", directional_ambient.x, directional_ambient.y, directional_ambient.z);
-   lightingShader.set_float("dirLight.diffuse", directional_diffuse.x, directional_diffuse.y, directional_diffuse.z);
-   lightingShader.set_float("dirLight.specular", directional_specular.x, directional_specular.y, directional_specular.z);
-   // spotlight uniforms
-   lightingShader.set_float("spotLight.position", lightViewPos.x, lightViewPos.y, lightViewPos.z);
-   lightingShader.set_float("spotLight.direction", lightFront.x, lightFront.y, lightFront.z);
-   lightingShader.set_float("spotLight.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
-   lightingShader.set_float("spotLight.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-   lightingShader.set_float("spotLight.specular", specular_color.x, specular_color.y, specular_color.z);
-   lightingShader.set_float("spotLight.constant", 1.0f);
-   lightingShader.set_float("spotLight.linear", 0.09f);
-   lightingShader.set_float("spotLight.quadratic", 0.032f);
-   lightingShader.set_float("spotLight.cutoff", glm::cos(glm::radians(12.5f)));
-   lightingShader.set_float("spotLight.outerCutoff", glm::cos(glm::radians(13.0f)));
-   // point uniforms
-   for (size_t i{0}; i < 4; i++) {
-      std::string k{std::to_string(i)};
-      glm::vec3 pos{view * glm::vec4{pointLightPositions[i], 1.0}};
-      glm::vec3 color{point_light_colors[i] * ambient_intensity};
-      lightingShader.set_float("pointLights[" + k + "].position", pos.x, pos.y, pos.z);
-      lightingShader.set_float("pointLights[" + k + "].ambient", color.x, color.y, color.z);
-      lightingShader.set_float("pointLights[" + k + "].diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-      lightingShader.set_float("pointLights[" + k + "].specular", specular_color.x, specular_color.y, specular_color.z);
-      lightingShader.set_float("pointLights[" + k + "].constant", 1.0f);
-      lightingShader.set_float("pointLights[" + k + "].linear", 0.09f);
-      lightingShader.set_float("pointLights[" + k + "].quadratic", 0.032f);
+
+   for (size_t i{0}; i < 1; i++) {
+      apply_directional(dir_lights[i], i);
    }
+   for (size_t i{0}; i < 1; i++) {
+      apply_spotlight(spot_lights[i], i);
+   }
+   for (size_t i{0}; i < 4; i++) {
+      apply_pointlight(point_lights[i], i);
+   }
+
    // material uniforms
    lightingShader.set_int("material.diffuse", 0);
    lightingShader.set_int("material.specular", 1);

@@ -1,5 +1,7 @@
 #version 330 core
 
+#define NR_DIR_LIGHTS 1
+#define NR_SPOT_LIGHTS 1
 #define NR_POINT_LIGHTS 4
 
 in vec3 FragPos;
@@ -9,6 +11,7 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 struct DirLight {
+    bool enabled;
     vec3 direction;
     vec3 ambient;
     vec3 diffuse;
@@ -16,6 +19,7 @@ struct DirLight {
 };
 
 struct PointLight {
+    bool enabled;
     vec3 position;
     vec3 ambient;
     vec3 diffuse;
@@ -27,6 +31,7 @@ struct PointLight {
 };
 
 struct SpotLight {
+    bool enabled;
     vec3 position;
     vec3 direction;
     vec3 ambient;
@@ -48,9 +53,9 @@ struct Material {
     float shininess;
 };
 
-uniform DirLight dirLight;
+uniform DirLight dirLights[NR_DIR_LIGHTS];
+uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 uniform PointLight pointLights[NR_POINT_LIGHTS];
-uniform SpotLight spotLight;
 uniform Material material;
 uniform float time;
 uniform float emissionSpeed;
@@ -75,11 +80,20 @@ float ComputeIntensity(SpotLight light, vec3 lightDir);
 // Program
 
 void main() {
-    vec3 result = CalcDirLight(dirLight);
+    vec3 result = vec3(0);
+
+    for(int i = 0; i < NR_DIR_LIGHTS; i++) {
+        if (!dirLights[i].enabled) continue;
+        result += CalcDirLight(dirLights[i]);
+    }
+    for(int i = 0; i < NR_SPOT_LIGHTS; i++) {
+        if (!spotLights[i].enabled) continue;
+        result += CalcSpotLight(spotLights[i]);
+    }
     for(int i = 0; i < NR_POINT_LIGHTS; i++) {
+        if (!pointLights[i].enabled) continue;
         result += CalcPointLight(pointLights[i]);
     }
-    result += CalcSpotLight(spotLight);
 
     FragColor = vec4(result, 1.0);
 }
