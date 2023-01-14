@@ -26,7 +26,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * SkyBoxes
 * Shadows
 
-![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.png?raw=true)
+![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.jpg?raw=true)
 
 
 ---
