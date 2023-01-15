@@ -7,19 +7,17 @@ project(${ProjectId})
 
 aux_source_directory("src" Src)
 aux_source_directory("vendor/include/imgui" ImGui)
-aux_source_directory("vendor/include/glad" GLAD)
 add_executable(${ProjectId}
    ${Src}
    ${ImGui}
-   ${GLAD}
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+#   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+#   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
 )
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE SYSTEM
    "vendor/include"
 )
 target_link_directories(${PROJECT_NAME} PRIVATE

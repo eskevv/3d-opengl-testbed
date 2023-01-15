@@ -30,6 +30,7 @@ void processInput(GLFWwindow *window);
 unsigned int load_texture(const char *path);
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission);
 void render_cube(float angle, glm::vec3 position);
+void render_lamp(LightSource light, glm::vec3 pos);
 void stage_setup();
 
 // settings
@@ -54,7 +55,7 @@ DirectionalLight dir_lights[1];
 SpotLight spot_lights[1];
 PointLight point_lights[4];
 float material_shininess{0.15f};
-float emission_strength{1.4f};
+float emission_strength{1.3f};
 float emission_speed{0.45f};
 
 // opengl
@@ -180,7 +181,8 @@ int main() {
       use_lighting(diffuseMap, specularMap, emissionMap);
       cube_vao.bind();
       for (unsigned int i = 0; i < NUM_CUBES; i++) {
-         float angle = i < 10 ? 20.0f * i + currentFrame / 4 : 0.0f;
+         // rotate only the first 10 cubes
+         float angle{i < 10 ? 20.0f * i + currentFrame / 4 : 0.0f};
          render_cube(angle, cube_positions[i]);
       }
 
@@ -193,27 +195,13 @@ int main() {
       // spotlights
       for (size_t i{0}; i < 1; i++) {
          if (!spot_lights[i].enabled) continue;
-
-         glm::vec3 color{spot_lights[i].color};
-         glm::mat4 model = glm::translate(glm::mat4{1.0f}, spot_lights[i].position);
-         model = glm::scale(model, glm::vec3{0.1f});
-
-         light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
-         light_cube_shader.set_matrix("model", model);
-         glDrawArrays(GL_TRIANGLES, 0, 36);
+         render_lamp(spot_lights[i], spot_lights[i].position);
       }
 
       // point lights
       for (size_t i{0}; i < 4; i++) {
          if (!point_lights[i].enabled) continue;
-
-         glm::vec3 color{point_lights[i].color};
-         glm::mat4 model{glm::translate(glm::mat4{1.0f}, point_lights[i].position)};
-         model = glm::scale(model, glm::vec3{0.3f});
-
-         light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
-         light_cube_shader.set_matrix("model", model);
-         glDrawArrays(GL_TRIANGLES, 0, 36);
+         render_lamp(point_lights[i], point_lights[i].position);
       }
 
       render_imgui();
@@ -346,6 +334,18 @@ void render_cube(float angle, glm::vec3 position) {
    lighting_shader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
+
+void render_lamp(LightSource light, glm::vec3 pos) {
+   glm::vec3 color{light.color};
+   glm::mat4 model{glm::translate(glm::mat4{1.0f}, pos)};
+   model = glm::scale(model, glm::vec3{0.3f});
+
+   light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
+   light_cube_shader.set_matrix("model", model);
+   glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+// imgui
 
 void header_point(const char *label, PointLight *point_light) {
    if (ImGui::CollapsingHeader(label)) {
