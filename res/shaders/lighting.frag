@@ -106,7 +106,8 @@ vec3 CalcDirLight(DirLight light) {
     vec3 diffuse  = ComputeDiffuse(light.diffuse, -light.direction);
     vec3 specular = ComputeSpecular(light.specular, -light.direction);
 
-    return ambient + diffuse + specular;
+    return vec3(1);
+    // return ambient + diffuse + specular;
 }
 
 vec3 CalcPointLight(PointLight light) {

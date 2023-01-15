@@ -15,6 +15,7 @@
 #include "shader.hpp"
 #include "camera.hpp"
 #include "light_sources.hpp"
+#include "vertex_array.hpp"
 
 void release_imgui();
 void render_imgui();
@@ -40,9 +41,9 @@ glm::vec3 clear_color{0.094f, 0.086f, 0.063f};
 // camera
 Camera camera{{0.0f, 3.0f, 3.0f}};
 float move_speed{12.0f};
-float lastX{SCR_WIDTH / 2.0f};
-float lastY{SCR_HEIGHT / 2.0f};
-bool firstMouse{true};
+float last_x{SCR_WIDTH / 2.0f};
+float last_y{SCR_HEIGHT / 2.0f};
+bool first_mouse{true};
 bool show_gui{true};
 
 glm::mat4 projection;
@@ -57,9 +58,10 @@ float emission_strength{1.4f};
 float emission_speed{0.45f};
 
 // opengl
-unsigned int VBO{}, cubeVAO, lightCubeVAO{};
-Shader lightingShader;
-Shader lightCubeShader;
+Shader lighting_shader;
+Shader light_cube_shader;
+VertexArray cube_vao;
+VertexArray light_vao;
 
 // timing
 float delta_time = 0.0f;
@@ -71,8 +73,8 @@ int main() {
    initialize_imgui();
 
    // create shader programs
-   lightingShader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
-   lightCubeShader = {"res/shaders/light.vert", "res/shaders/light.frag"};
+   lighting_shader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
+   light_cube_shader = {"res/shaders/light.vert", "res/shaders/light.frag"};
 
    dir_lights[0] = DirectionalLight{{0.0f, -1.0f, -0.3f}};
 
@@ -124,7 +126,7 @@ int main() {
                        -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
    const size_t NUM_CUBES{1210};
-   glm::vec3 cubePositions[NUM_CUBES] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
+   glm::vec3 cube_positions[NUM_CUBES] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
                                          glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
                                          glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
                                          glm::vec3(-1.3f, 1.0f, -1.5f)};
@@ -135,36 +137,26 @@ int main() {
       float y{-6.0f};
       float z{(i - 10) % WIDTH};
       glm::vec3 pos{x, y, z};
-      cubePositions[i] = pos;
+      cube_positions[i] = pos;
    }
 
-   // cube vao
-   glGenVertexArrays(1, &cubeVAO);
-   glGenBuffers(1, &VBO);
-   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-   glBindVertexArray(cubeVAO);
-
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
-   glEnableVertexAttribArray(0);
-   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-   glEnableVertexAttribArray(1);
-   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-   glEnableVertexAttribArray(2);
+   // configure the standard cube VAO
+   cube_vao = VertexArray{sizeof(vertices), 8, vertices};
+   cube_vao.bind();
+   cube_vao.add_data(0, 0, 3);
+   cube_vao.add_data(1, 3, 3);
+   cube_vao.add_data(2, 6, 2);
+   cube_vao.unbind();
 
    // configure the light's VAO
-   glGenVertexArrays(1, &lightCubeVAO);
-   glBindVertexArray(lightCubeVAO);
-   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0 * sizeof(float)));
-   glEnableVertexAttribArray(0);
+   light_vao = VertexArray{sizeof(vertices), 8, vertices};
+   light_vao.add_data(0, 0, 3);
+   light_vao.unbind();
 
    unsigned int diffuseMap = load_texture("res/container2.png");
    unsigned int specularMap = load_texture("res/container2_specular.png");
    unsigned int emissionMap = load_texture("res/matrix.jpg");
 
-   // render loop
-   // -----------
    while (!glfwWindowShouldClose(window)) {
       // per-frame time logic
       // --------------------
@@ -174,29 +166,27 @@ int main() {
       camera.MovementSpeed = move_speed;
 
       // input
-      // -----
       processInput(window);
 
       // updates
-      // -------
       stage_setup();
 
       // render
-      // ------
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // cubes
       use_lighting(diffuseMap, specularMap, emissionMap);
-      glBindVertexArray(cubeVAO);
+      cube_vao.bind();
       for (unsigned int i = 0; i < NUM_CUBES; i++) {
          float angle = i < 10 ? 20.0f * i + currentFrame / 4 : 0.0f;
-         render_cube(angle, cubePositions[i]);
+         render_cube(angle, cube_positions[i]);
       }
 
       // lamp objects
-      lightCubeShader.use();
-      lightCubeShader.set_matrix("view", view);
-      lightCubeShader.set_matrix("projection", projection);
+      light_vao.bind();
+      light_cube_shader.use();
+      light_cube_shader.set_matrix("view", view);
+      light_cube_shader.set_matrix("projection", projection);
 
       // spotlights
       for (size_t i{0}; i < 1; i++) {
@@ -206,8 +196,8 @@ int main() {
          glm::mat4 model = glm::translate(glm::mat4{1.0f}, spot_lights[i].position);
          model = glm::scale(model, glm::vec3{0.1f});
 
-         lightCubeShader.set_float("lightColor", color.x, color.y, color.z);
-         lightCubeShader.set_matrix("model", model);
+         light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
+         light_cube_shader.set_matrix("model", model);
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
 
@@ -219,15 +209,13 @@ int main() {
          glm::mat4 model{glm::translate(glm::mat4{1.0f}, point_lights[i].position)};
          model = glm::scale(model, glm::vec3{0.3f});
 
-         lightCubeShader.set_float("lightColor", color.x, color.y, color.z);
-         lightCubeShader.set_matrix("model", model);
+         light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
+         light_cube_shader.set_matrix("model", model);
          glDrawArrays(GL_TRIANGLES, 0, 36);
       }
 
       render_imgui();
 
-      // glfw: swap buffers and poll IO events
-      // -------------------------------------
       glfwSwapBuffers(window);
       glfwPollEvents();
    }
@@ -255,9 +243,9 @@ void release_glfw() {
 }
 
 void deallocate_gl() {
-   glDeleteVertexArrays(1, &cubeVAO);
-   glDeleteVertexArrays(1, &lightCubeVAO);
-   glDeleteBuffers(1, &VBO);
+   // glDeleteVertexArrays(1, &cubeVAO);
+   // glDeleteVertexArrays(1, &lightCubeVAO);
+   // glDeleteBuffers(1, &VBO);
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame
@@ -306,7 +294,7 @@ void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
       show_gui = true;
-      firstMouse = true;
+      first_mouse = true;
    }
    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -327,17 +315,17 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
    float xpos = static_cast<float>(xposIn);
    float ypos = static_cast<float>(yposIn);
 
-   if (firstMouse) {
-      lastX = xpos;
-      lastY = ypos;
-      firstMouse = false;
+   if (first_mouse) {
+      last_x = xpos;
+      last_y = ypos;
+      first_mouse = false;
    }
 
-   float xoffset = xpos - lastX;
-   float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+   float xoffset = xpos - last_x;
+   float yoffset = last_y - ypos; // reversed since y-coordinates go from bottom to top
 
-   lastX = xpos;
-   lastY = ypos;
+   last_x = xpos;
+   last_y = ypos;
 
    camera.process_mouse_movement(xoffset, yoffset);
 }
@@ -352,8 +340,8 @@ void render_cube(float angle, glm::vec3 position) {
    glm::mat4 model = glm::mat4(1.0f);
    model = glm::translate(model, position);
    model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-   lightingShader.set_matrix("model", model);
-   lightingShader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
+   lighting_shader.set_matrix("model", model);
+   lighting_shader.set_matrix("normalView", glm::mat3{glm::transpose(glm::inverse(view * model))});
    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
@@ -502,7 +490,7 @@ unsigned int load_texture(char const *path) {
 
 void stage_setup() {
    glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
-   projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
+   projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
    view = camera.get_view_matrix();
 }
 
@@ -514,11 +502,11 @@ void apply_directional(const DirectionalLight &light, unsigned int place) {
 
    // uniforms
    std::string k{std::to_string(place)};
-   lightingShader.set_bool("dirLights[" + k + "].enabled", light.enabled);
-   lightingShader.set_float("dirLights[" + k + "].direction", direction.x, direction.y, direction.z);
-   lightingShader.set_float("dirLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
-   lightingShader.set_float("dirLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
-   lightingShader.set_float("dirLights[" + k + "].specular", specular.x, specular.y, specular.z);
+   lighting_shader.set_bool("dirLights[" + k + "].enabled", light.enabled);
+   lighting_shader.set_float("dirLights[" + k + "].direction", direction.x, direction.y, direction.z);
+   lighting_shader.set_float("dirLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lighting_shader.set_float("dirLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lighting_shader.set_float("dirLights[" + k + "].specular", specular.x, specular.y, specular.z);
 }
 
 void apply_spotlight(const SpotLight &light, unsigned int place) {
@@ -530,17 +518,17 @@ void apply_spotlight(const SpotLight &light, unsigned int place) {
 
    // uniforms
    std::string k{std::to_string(place)};
-   lightingShader.set_bool("spotLights[" + k + "].enabled", light.enabled);
-   lightingShader.set_float("spotLights[" + k + "].position", position.x, position.y, position.z);
-   lightingShader.set_float("spotLights[" + k + "].direction", light_dir.x, light_dir.y, light_dir.z);
-   lightingShader.set_float("spotLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
-   lightingShader.set_float("spotLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
-   lightingShader.set_float("spotLights[" + k + "].specular", specular.x, specular.y, specular.z);
-   lightingShader.set_float("spotLights[" + k + "].constant", light.constant);
-   lightingShader.set_float("spotLights[" + k + "].linear", light.linear);
-   lightingShader.set_float("spotLights[" + k + "].quadratic", light.quadratic);
-   lightingShader.set_float("spotLights[" + k + "].cutoff", glm::cos(glm::radians(light.cutoff)));
-   lightingShader.set_float("spotLights[" + k + "].outerCutoff", glm::cos(glm::radians(light.outer_cutoff)));
+   lighting_shader.set_bool("spotLights[" + k + "].enabled", light.enabled);
+   lighting_shader.set_float("spotLights[" + k + "].position", position.x, position.y, position.z);
+   lighting_shader.set_float("spotLights[" + k + "].direction", light_dir.x, light_dir.y, light_dir.z);
+   lighting_shader.set_float("spotLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lighting_shader.set_float("spotLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lighting_shader.set_float("spotLights[" + k + "].specular", specular.x, specular.y, specular.z);
+   lighting_shader.set_float("spotLights[" + k + "].constant", light.constant);
+   lighting_shader.set_float("spotLights[" + k + "].linear", light.linear);
+   lighting_shader.set_float("spotLights[" + k + "].quadratic", light.quadratic);
+   lighting_shader.set_float("spotLights[" + k + "].cutoff", glm::cos(glm::radians(light.cutoff)));
+   lighting_shader.set_float("spotLights[" + k + "].outerCutoff", glm::cos(glm::radians(light.outer_cutoff)));
 }
 
 void apply_pointlight(const PointLight &light, unsigned int place) {
@@ -551,20 +539,20 @@ void apply_pointlight(const PointLight &light, unsigned int place) {
 
    // uniforms
    std::string k{std::to_string(place)};
-   lightingShader.set_bool("pointLights[" + k + "].enabled", light.enabled);
-   lightingShader.set_float("pointLights[" + k + "].position", pos.x, pos.y, pos.z);
-   lightingShader.set_float("pointLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
-   lightingShader.set_float("pointLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
-   lightingShader.set_float("pointLights[" + k + "].specular", specular.x, specular.y, specular.z);
-   lightingShader.set_float("pointLights[" + k + "].constant", light.constant);
-   lightingShader.set_float("pointLights[" + k + "].linear", light.linear);
-   lightingShader.set_float("pointLights[" + k + "].quadratic", light.quadratic);
+   lighting_shader.set_bool("pointLights[" + k + "].enabled", light.enabled);
+   lighting_shader.set_float("pointLights[" + k + "].position", pos.x, pos.y, pos.z);
+   lighting_shader.set_float("pointLights[" + k + "].ambient", ambient.x, ambient.y, ambient.z);
+   lighting_shader.set_float("pointLights[" + k + "].diffuse", diffuse.x, diffuse.y, diffuse.z);
+   lighting_shader.set_float("pointLights[" + k + "].specular", specular.x, specular.y, specular.z);
+   lighting_shader.set_float("pointLights[" + k + "].constant", light.constant);
+   lighting_shader.set_float("pointLights[" + k + "].linear", light.linear);
+   lighting_shader.set_float("pointLights[" + k + "].quadratic", light.quadratic);
 }
 
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission) {
-   lightingShader.use();
-   lightingShader.set_matrix("projection", projection);
-   lightingShader.set_matrix("view", view);
+   lighting_shader.use();
+   lighting_shader.set_matrix("projection", projection);
+   lighting_shader.set_matrix("view", view);
 
    for (size_t i{0}; i < 1; i++) {
       apply_directional(dir_lights[i], i);
@@ -577,13 +565,13 @@ void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emis
    }
 
    // material uniforms
-   lightingShader.set_int("material.diffuse", 0);
-   lightingShader.set_int("material.specular", 1);
-   lightingShader.set_int("material.emission", 2);
-   lightingShader.set_float("material.shininess", 1.0f / material_shininess);
-   lightingShader.set_float("emissionSpeed", emission_speed);
-   lightingShader.set_float("emissionStrength", emission_strength);
-   lightingShader.set_float("time", static_cast<float>(glfwGetTime()));
+   lighting_shader.set_int("material.diffuse", 0);
+   lighting_shader.set_int("material.specular", 1);
+   lighting_shader.set_int("material.emission", 2);
+   lighting_shader.set_float("material.shininess", 1.0f / material_shininess);
+   lighting_shader.set_float("emissionSpeed", emission_speed);
+   lighting_shader.set_float("emissionStrength", emission_strength);
+   lighting_shader.set_float("time", static_cast<float>(glfwGetTime()));
 
    glActiveTexture(GL_TEXTURE0);
    glBindTexture(GL_TEXTURE_2D, diffuse);
