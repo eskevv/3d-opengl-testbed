@@ -153,16 +153,16 @@ int main() {
    light_vao.push_data<float>(3);
    light_vao.unbind();
 
-   unsigned int diffuseMap = load_texture("res/container2.png");
-   unsigned int specularMap = load_texture("res/container2_specular.png");
-   unsigned int emissionMap = load_texture("res/matrix.jpg");
+   unsigned int diffuse_map = load_texture("res/container2.png");
+   unsigned int specular_map = load_texture("res/container2_specular.png");
+   unsigned int emission_map = load_texture("res/matrix.jpg");
 
    while (!glfwWindowShouldClose(window)) {
       // per-frame time logic
       // --------------------
-      float currentFrame = static_cast<float>(glfwGetTime());
-      delta_time = currentFrame - last_frame;
-      last_frame = currentFrame;
+      float current_frame{static_cast<float>(glfwGetTime())};
+      delta_time = current_frame - last_frame;
+      last_frame = current_frame;
       camera.MovementSpeed = move_speed;
 
       // input
@@ -175,11 +175,11 @@ int main() {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // cubes
-      use_lighting(diffuseMap, specularMap, emissionMap);
+      use_lighting(diffuse_map, specular_map, emission_map);
       cube_vao.bind();
-      for (unsigned int i = 0; i < NUM_CUBES; i++) {
+      for (size_t i{0}; i < NUM_CUBES; i++) {
          // rotate only the first 10 cubes
-         float angle{i < 10 ? 20.0f * i + currentFrame / 4 : 0.0f};
+         float angle{i < 10 ? 20.0f * i + current_frame / 4 : 0.0f};
          render_cube(angle, cube_positions[i]);
       }
 
