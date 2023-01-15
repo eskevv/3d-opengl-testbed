@@ -170,8 +170,8 @@ int main() {
       // updates
       stage_setup();
 
-      /* RENDER */
-      // --------
+      /* RENDER --> */
+      // -------------
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // cubes
@@ -203,8 +203,8 @@ int main() {
 
       render_imgui();
 
-      /* RENDER */
-      // --------
+      /* <- RENDER */
+      // ------------
 
       glfwSwapBuffers(window);
       glfwPollEvents();
