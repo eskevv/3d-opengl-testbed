@@ -148,7 +148,7 @@ int main() {
    cube_vao.unbind();
 
    // configure the light's VAO
-   light_vao = VertexArray{sizeof(vertices), 8, vertices};
+   light_vao = VertexArray{sizeof(vertices), 8 * sizeof(float), vertices};
    light_vao.bind();
    light_vao.push_data<float>(3);
    light_vao.unbind();
