@@ -74,19 +74,17 @@ int main() {
    initialize_imgui();
 
    // create shader programs
-   lighting_shader = {"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
-   light_cube_shader = {"res/shaders/light.vert", "res/shaders/light.frag"};
+   lighting_shader = Shader{"res/shaders/lighting.vert", "res/shaders/lighting.frag"};
+   light_cube_shader = Shader{"res/shaders/light.vert", "res/shaders/light.frag"};
 
+   // initial setup
    dir_lights[0] = DirectionalLight{{0.0f, -1.0f, -0.3f}};
-
    spot_lights[0] = SpotLight{{2.6f, 0.0f, 5.3f}, {0.0f, -1.0f, 0.0f}};
-
    point_lights[0] = PointLight{{0.7f, 0.2f, 2.0f}};
    point_lights[1] = PointLight{{2.3f, -3.3f, -4.0f}};
    point_lights[2] = PointLight{{-4.0f, 2.0f, -12.0f}};
    point_lights[3] = PointLight{{0.0f, 0.0f, -3.0f}};
 
-   // initial setup
    point_lights[0].enabled = true;
    point_lights[0].color = glm::vec3{0.098f, 1.0f, 0.24f};
    point_lights[0].ambient_strength = 0.054f;
@@ -99,10 +97,8 @@ int main() {
    point_lights[3].diffuse_strength = 0.919f;
    point_lights[3].specular_strength = 2.31f;
 
-   // set up vertex data (and buffer(s)) and configure vertex attributes
-   // ------------------------------------------------------------------
-   float vertices[] = {// positions          // normals           // texture coords
-                       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
+   // positions - normals - texture coords for cube
+   float vertices[] = {-0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
                        0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
                        -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
 
@@ -153,6 +149,7 @@ int main() {
 
    // configure the light's VAO
    light_vao = VertexArray{sizeof(vertices), 8, vertices};
+   light_vao.bind();
    light_vao.push_data<float>(3);
    light_vao.unbind();
 
@@ -220,7 +217,6 @@ int main() {
 }
 
 // resources
-// -------------------------------------------
 void release_imgui() {
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplGlfw_Shutdown();
@@ -239,7 +235,6 @@ void deallocate_gl() {
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame
-// -----------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
       glfwSetWindowShouldClose(window, true);
@@ -293,7 +288,6 @@ void processInput(GLFWwindow *window) {
 }
 
 // glfw: callbacks
-// -----------------------
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
    // width and height will be significantly larger than specified on retina displays.
    glViewport(0, 0, width, height);
@@ -325,7 +319,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
 }
 
 // rendering
-// -----------------------
 void render_cube(float angle, glm::vec3 position) {
    glm::mat4 model = glm::mat4(1.0f);
    model = glm::translate(model, position);
@@ -346,7 +339,6 @@ void render_lamp(LightSource light, glm::vec3 pos) {
 }
 
 // imgui
-
 void header_point(const char *label, PointLight *point_light) {
    if (ImGui::CollapsingHeader(label)) {
       if (ImGui::BeginTable("POINTLIGHT", 1)) {
@@ -456,7 +448,6 @@ void render_imgui() {
 }
 
 // setup
-// -----------------------
 unsigned int load_texture(char const *path) {
    unsigned int textureID;
    glGenTextures(1, &textureID);
@@ -591,7 +582,7 @@ void initialize_testbed() {
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
    // window creation
-   window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL TestBed", NULL, NULL);
+   window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL TestBed", nullptr, nullptr);
    if (window == nullptr) {
       std::cout << "Failed to create GLFW window" << std::endl;
       glfwTerminate();
@@ -618,8 +609,6 @@ void initialize_testbed() {
 }
 
 void initialize_imgui() {
-   // DearImGui
-   // ---------
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
    ImGuiIO &io = ImGui::GetIO();
