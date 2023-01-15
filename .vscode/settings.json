@@ -50,6 +50,11 @@
       "cinttypes": "cpp",
       "cstring": "cpp",
       "ctime": "cpp",
-      "iomanip": "cpp"
+      "iomanip": "cpp",
+      "chrono": "cpp",
+      "list": "cpp",
+      "map": "cpp",
+      "set": "cpp",
+      "ratio": "cpp"
    }
 }

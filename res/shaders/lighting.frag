@@ -130,8 +130,8 @@ vec3 CalcSpotLight(SpotLight light) {
     float intensity = ComputeIntensity(light, -lightDir);
 
     vec3 ambient  = light.ambient * diffuseMap;
-    vec3 diffuse = ComputeDiffuse(light.diffuse, -light.direction);
-    vec3 specular = ComputeSpecular(light.specular, -light.direction);
+    vec3 diffuse = ComputeDiffuse(light.diffuse, lightDir);
+    vec3 specular = ComputeSpecular(light.specular, lightDir);
 
     ambient *= attenuation;
     diffuse *= attenuation * intensity;
