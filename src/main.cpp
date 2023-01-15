@@ -134,8 +134,7 @@ int main() {
       float x{(i - 10) / WIDTH};
       float y{-6.0f};
       float z{(i - 10) % WIDTH};
-      glm::vec3 pos{x, y, z};
-      cube_positions[i] = pos;
+      cube_positions[i] = glm::vec3{x, y, z};
    }
 
    // configure the standard cube VAO
