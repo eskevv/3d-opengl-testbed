@@ -39,9 +39,11 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 >*1. requires the res folder in the same directory.*
 
 **Dependencies (already linked)**  
-* *OpenGL 3.3+*
-* *GLFW3*    
-* *GLAD*  
-* *GLM*  
-* *Dear ImGui*  
-* *stb_image*  
+* *OpenGL 3.3+*  (API specification)
+* *GLFW3*  (os facilitations)
+* *GLAD*  (opengl functions)
+* *assimp* (mesh loading)
+* *stb_image* (texture loading)
+* *GLM*  (optimized math library)
+* *Dear ImGui*  (immediate mode GUI) 
+
