@@ -17,6 +17,7 @@
 #include "light_sources.hpp"
 #include "vertex_array.hpp"
 
+// function prototypes
 void release_imgui();
 void render_imgui();
 void release_glfw();
@@ -33,13 +34,13 @@ void render_cube(float angle, glm::vec3 position);
 void render_lamp(LightSource light, glm::vec3 pos);
 void stage_setup();
 
-// settings
+// window settings
 const unsigned int SCR_WIDTH{1600};
 const unsigned int SCR_HEIGHT{1200};
 GLFWwindow *window;
 glm::vec3 clear_color{0.094f, 0.086f, 0.063f};
 
-// camera
+// camera / gui
 Camera camera{{0.0f, 3.0f, 3.0f}};
 float move_speed{12.0f};
 float last_x{SCR_WIDTH / 2.0f};
@@ -65,8 +66,8 @@ VertexArray cube_vao;
 VertexArray light_vao;
 
 // timing
-float delta_time = 0.0f;
-float last_frame = 0.0f;
+float delta_time{0.0f};
+float last_frame{0.0f};
 
 int main() {
    // initialization steps
