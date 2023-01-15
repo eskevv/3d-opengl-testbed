@@ -159,7 +159,6 @@ int main() {
 
    while (!glfwWindowShouldClose(window)) {
       // per-frame time logic
-      // --------------------
       float current_frame{static_cast<float>(glfwGetTime())};
       delta_time = current_frame - last_frame;
       last_frame = current_frame;
@@ -171,7 +170,8 @@ int main() {
       // updates
       stage_setup();
 
-      // render
+      /* RENDER */
+      // --------
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // cubes
@@ -202,6 +202,9 @@ int main() {
       }
 
       render_imgui();
+
+      /* RENDER */
+      // --------
 
       glfwSwapBuffers(window);
       glfwPollEvents();
