@@ -373,49 +373,40 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
 }
 
 // imgui
-void header_point(const char *label, PointLight *point_light) {
-  if (ImGui::CollapsingHeader(label)) {
-    if (ImGui::BeginTable("POINTLIGHT", 1)) {
-      ImGui::TableNextColumn();
-      ImGui::Checkbox("Enabled", (bool *)(&point_light->enabled));
-      ImGui::DragFloat3("Position", (float *)(&point_light->position), 0.1f);
-      ImGui::ColorEdit3("Color", (float *)(&point_light->color));
-      ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 10.0f);
-      ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
-      ImGui::EndTable();
-    }
+void tree_points(const char *label, PointLight *point_light) {
+  if (ImGui::TreeNode(label)) {
+    ImGui::Checkbox("Enabled", (bool *)(&point_light->enabled));
+    ImGui::DragFloat3("Position", (float *)(&point_light->position), 0.1f);
+    ImGui::ColorEdit3("Color", (float *)(&point_light->color));
+    ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
+    ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
+    ImGui::TreePop();
   }
 }
 
-void header_dir(const char *label, DirectionalLight *directional_light) {
-  if (ImGui::CollapsingHeader(label)) {
-    if (ImGui::BeginTable("DIRECTIONAL", 1)) {
-      ImGui::TableNextColumn();
-      ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
-      ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.01f, -1.0f, 1.0f);
-      ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
-      ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
-      ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
-      ImGui::EndTable();
-    }
+void tree_directional(const char *label, DirectionalLight *directional_light) {
+  if (ImGui::TreeNode(label)) {
+    ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
+    ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.01f, -1.0f, 1.0f);
+    ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
+    ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
+    ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
+    ImGui::TreePop();
   }
 }
 
-void header_spot(const char *label, SpotLight *spot_light) {
-  if (ImGui::CollapsingHeader(label)) {
-    if (ImGui::BeginTable("SPOTLIGHT", 1)) {
-      ImGui::TableNextColumn();
-      ImGui::Checkbox("Enabled", (bool *)(&spot_light->enabled));
-      ImGui::DragFloat3("Position", (float *)(&spot_light->position), 0.1f);
-      ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.01f, -1.0f, 1.0f);
-      ImGui::ColorEdit3("Color", (float *)(&spot_light->color));
-      ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
-      ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
-      ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
-      ImGui::EndTable();
-    }
+void tree_spot(const char *label, SpotLight *spot_light) {
+  if (ImGui::TreeNode(label)) {
+    ImGui::Checkbox("Enabled", (bool *)(&spot_light->enabled));
+    ImGui::DragFloat3("Position", (float *)(&spot_light->position), 0.1f);
+    ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.01f, -1.0f, 1.0f);
+    ImGui::ColorEdit3("Color", (float *)(&spot_light->color));
+    ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
+    ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
+    ImGui::TreePop();
   }
 }
 
@@ -455,8 +446,7 @@ void render_imgui() {
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "SPECULAR: Shiny or glosiness effect perceived by a view space angle");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
                      "! By Default: All emission is affected by diffuse angle and color per light");
-  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
-                     "! What may appear to be shadows is linear mipmapping over steel borders.");
+  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! What may appear to be shadows is linear mipmapping over steel borders.");
 
   ImGui::Separator();
   ImGui::ColorEdit3("Clear Color", (float *)&clear_color);
@@ -474,17 +464,20 @@ void render_imgui() {
     ImGui::Checkbox("With Emission", &backpack.has_emission);
   }
 
-  ImGui::Separator();
-  for (size_t i{0}; i < 1; i++) {
-    header_dir(("Directional Light #" + std::to_string(i + 1)).c_str(), &dir_lights[i]);
+  if (ImGui::CollapsingHeader("Directional Lighting")) {
+    for (size_t i{0}; i < 1; i++) {
+      tree_directional(("Directional Light #" + std::to_string(i + 1)).c_str(), &dir_lights[i]);
+    }
   }
-  ImGui::Separator();
-  for (size_t i{0}; i < 1; i++) {
-    header_spot(("Spot Light #" + std::to_string(i + 1)).c_str(), &spot_lights[i]);
+  if (ImGui::CollapsingHeader("Spot Lighting")) {
+    for (size_t i{0}; i < 1; i++) {
+      tree_spot(("Spot Light #" + std::to_string(i + 1)).c_str(), &spot_lights[i]);
+    }
   }
-  ImGui::Separator();
-  for (size_t i{0}; i < 4; i++) {
-    header_point(("Point Light #" + std::to_string(i + 1)).c_str(), &point_lights[i]);
+  if (ImGui::CollapsingHeader("Point Lighting")) {
+    for (size_t i{0}; i < 4; i++) {
+      tree_points(("Point Light #" + std::to_string(i + 1)).c_str(), &point_lights[i]);
+    }
   }
 
   ImGui::End();
@@ -494,7 +487,6 @@ void render_imgui() {
 }
 
 // setup
-
 void stage_setup() {
   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
   projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
