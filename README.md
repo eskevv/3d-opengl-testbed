@@ -18,7 +18,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
    1. *[ Directional, Point lights, Spot lights]*  
    2. *Attenuation (light perception across distances)*  
    3. *Smoothed lighting*
-   4. *Materials & Diffuse Maps*
+   4. *Materials & Texture mapping*
    
 * Editor (Immediate-State GUI)
 
