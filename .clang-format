@@ -8,7 +8,6 @@ SortIncludes:    false
 # AccessModifierOffset: -3
 # AllowShortFunctionsOnASingleLine: Empty
 # AlwaysBreakTemplateDeclarations: Yes
-
 # AlignAfterOpenBracket: Align
 # AlignArrayOfStructures: None
 # AlignConsecutiveMacros: None

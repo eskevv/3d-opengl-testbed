@@ -19,20 +19,24 @@
 #include "vertex_array.hpp"
 
 // function prototypes
+void render_cube(float angle, glm::vec3 position);
+void render_lamp(LightSource light, glm::vec3 pos);
+void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos);
+
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
 void release_imgui();
 void render_imgui();
 void release_glfw();
 void deallocate_gl();
+
 void initialize_testbed();
 void initialize_imgui();
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
 void processInput(GLFWwindow *window);
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission);
-void render_cube(float angle, glm::vec3 position);
-void render_lamp(LightSource light, glm::vec3 pos);
-void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos);
 void stage_setup();
 
 // window settings
@@ -52,13 +56,14 @@ bool show_gui{true};
 glm::mat4 projection;
 glm::mat4 view;
 
-// light
+// lights / objects
 DirectionalLight dir_lights[1];
 SpotLight spot_lights[1];
 PointLight point_lights[4];
 float material_shininess{0.15f};
 float emission_strength{1.3f};
 float emission_speed{0.45f};
+Model backpack;
 
 // opengl
 Shader lighting_shader;
@@ -102,7 +107,10 @@ int main() {
   point_lights[3].diffuse_strength = 0.919f;
   point_lights[3].specular_strength = 2.31f;
 
-  Model backpack = {"res/backpack/backpack.obj"};
+  backpack = Model{"res/backpack/backpack.obj"};
+  backpack.has_diffuse = true;
+  backpack.has_specular = true;
+  backpack.has_emission = true;
 
   // NDCs -- normals -- texture coords for cube
   float vertices[] = {-0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
@@ -160,13 +168,13 @@ int main() {
   light_vao.push_data<float>(3);
   light_vao.unbind();
 
-  unsigned int diffuse_map = load_texture("res/container2.png");
-  unsigned int specular_map = load_texture("res/container2_specular.png");
-  unsigned int emission_map = load_texture("res/matrix.jpg");
+  unsigned int diffuse_map = {load_texture("res/container2.png")};
+  unsigned int specular_map = {load_texture("res/container2_specular.png")};
+  unsigned int emission_map = {load_texture("res/matrix.jpg")};
 
   while (!glfwWindowShouldClose(window)) {
     // per-frame time logic
-    float current_frame{static_cast<float>(glfwGetTime())};
+    float current_frame = {static_cast<float>(glfwGetTime())};
     delta_time = current_frame - last_frame;
     last_frame = current_frame;
     camera.MovementSpeed = move_speed;
@@ -191,9 +199,6 @@ int main() {
     }
 
     // model
-    // model_shader.use();
-    // model_shader.set_matrix("projection", projection);
-    // model_shader.set_matrix("view", view);
     render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
 
     // lamp objects
@@ -361,8 +366,9 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
   glm::mat4 model = {glm::translate(glm::mat4{1.0f}, pos)};
   model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
   shader.set_matrix("model", model);
-  shader.set_bool("diffuse", true);
-  shader.set_bool("specular", false);
+  shader.set_bool("diffuse", obj_model.has_diffuse);
+  shader.set_bool("specular", obj_model.has_specular);
+  shader.set_bool("emissive", obj_model.has_emission);
   obj_model.draw(shader);
 }
 
@@ -387,7 +393,7 @@ void header_dir(const char *label, DirectionalLight *directional_light) {
     if (ImGui::BeginTable("DIRECTIONAL", 1)) {
       ImGui::TableNextColumn();
       ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
-      ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.1f);
+      ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.01f, -1.0f, 1.0f);
       ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
       ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
       ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
@@ -403,7 +409,7 @@ void header_spot(const char *label, SpotLight *spot_light) {
       ImGui::TableNextColumn();
       ImGui::Checkbox("Enabled", (bool *)(&spot_light->enabled));
       ImGui::DragFloat3("Position", (float *)(&spot_light->position), 0.1f);
-      ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.1f);
+      ImGui::DragFloat3("Direction", (float *)(&spot_light->direction), 0.01f, -1.0f, 1.0f);
       ImGui::ColorEdit3("Color", (float *)(&spot_light->color));
       ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
       ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
@@ -470,6 +476,13 @@ void render_imgui() {
   ImGui::Separator();
   for (size_t i{0}; i < 4; i++) {
     header_point(("Point Light #" + std::to_string(i + 1)).c_str(), &point_lights[i]);
+  }
+
+  ImGui::Separator();
+  if (ImGui::CollapsingHeader("Model Properties")) {
+    ImGui::Checkbox("With Diffuse", &backpack.has_diffuse);
+    ImGui::Checkbox("With Specular", &backpack.has_specular);
+    ImGui::Checkbox("With Emission", &backpack.has_emission);
   }
 
   ImGui::End();
