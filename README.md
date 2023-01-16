@@ -35,11 +35,12 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 ---
 ### Running: 
 *Option 1.* Build from source and grab the dependencies (builds with CMake).  
->*1. (optional) adjust the CMakeLists where to search for dependencies.*  
->*2. from root dir (using Ninja): ```cmake -B build -G Ninja && cmake --build build```*  
+>-> *(optional) adjust the CMakeLists where to search for dependencies.*  
+>-> *from root dir (using Ninja): ```cmake -B build -G Ninja && cmake --build build```*   
 
-*Option 2.* (not always up to date) Download the binary from Releases 
->*1. requires the res folder in the same directory.*
+*Option 2.* Download the binary from Releases 
+>-> *not always up to date*  
+>-> *requires the res folder in the same directory.*
 
 **Dependencies (already linked)**  
 * *OpenGL 3.3+*  (API specification)
