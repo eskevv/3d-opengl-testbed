@@ -46,7 +46,7 @@ GLFWwindow *window;
 glm::vec3 clear_color{0.094f, 0.086f, 0.063f};
 
 // camera / gui
-Camera camera{{0.0f, 3.0f, 3.0f}};
+Camera camera{{0.0f, 3.0f, 20.0f}};
 float move_speed{12.0f};
 float last_x{SCR_WIDTH / 2.0f};
 float last_y{SCR_HEIGHT / 2.0f};
@@ -89,7 +89,10 @@ int main() {
 
   // initial setup
   dir_lights[0] = DirectionalLight{{0.0f, -1.0f, -0.3f}};
+
   spot_lights[0] = SpotLight{{2.6f, 0.0f, 5.3f}, {0.0f, -1.0f, 0.0f}};
+  spot_lights[0].enabled = true;
+
   point_lights[0] = PointLight{{0.7f, 0.2f, 2.0f}};
   point_lights[1] = PointLight{{2.3f, -3.3f, -4.0f}};
   point_lights[2] = PointLight{{-4.0f, 2.0f, -12.0f}};
@@ -381,6 +384,13 @@ void tree_points(const char *label, PointLight *point_light) {
     ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
     ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
+    if (ImGui::TreeNode("Attenuation")) {
+      ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f);
+      ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f);
+      ImGui::TreePop();
+    }
     ImGui::TreePop();
   }
 }
@@ -406,6 +416,28 @@ void tree_spot(const char *label, SpotLight *spot_light) {
     ImGui::SliderFloat("Ambient Strength", (float *)(&spot_light->ambient_strength), 0.0f, 1.0f);
     ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
+    if (ImGui::TreeNode("Attenuation")) {
+      ImGui::SliderFloat("Linear", (float *)(&spot_light->linear), 0.0f, 1.0f);
+      ImGui::SliderFloat("Quadratic", (float *)(&spot_light->quadratic), 0.0f, 2.0f);
+      ImGui::TreePop();
+    }
+    if (ImGui::TreeNode("Intensity")) {
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! A large difference in values will result in smoother edges.");
+
+      float initial_inner = {spot_light->cutoff};
+      float initial_outer = {spot_light->outer_cutoff};
+
+      if (initial_outer < initial_inner) {
+        spot_light->outer_cutoff = spot_light->cutoff;
+      }
+      ImGui::SliderFloat("Inner Cutoff", (float *)(&spot_light->cutoff), 0.0f, 100.0f);
+      ImGui::SliderFloat("Outer Cutoff", (float *)(&spot_light->outer_cutoff), 0.0f, 100.0f);
+      if (initial_outer < initial_inner) {
+        spot_light->cutoff = spot_light->outer_cutoff;
+      }
+
+      ImGui::TreePop();
+    }
     ImGui::TreePop();
   }
 }
@@ -449,6 +481,8 @@ void render_imgui() {
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! What may appear to be shadows is linear mipmapping over steel borders.");
 
   ImGui::Separator();
+  ImGui::TextColored(ImVec4{0.8f, 0.2f, 0.4f, 1.0f}, "Camera Pos:  (X) %.1f (Y) %.1f (Z) %.1f ", camera.Position.x,
+                     camera.Position.y, camera.Position.z);
   ImGui::ColorEdit3("Clear Color", (float *)&clear_color);
   ImGui::SliderFloat("Camera Speed", &move_speed, 0.0f, 50.0f);
   ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 1.0f);
