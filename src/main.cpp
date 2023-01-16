@@ -361,6 +361,8 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
   glm::mat4 model = {glm::translate(glm::mat4{1.0f}, pos)};
   model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
   shader.set_matrix("model", model);
+  shader.set_bool("diffuse", true);
+  shader.set_bool("specular", false);
   obj_model.draw(shader);
 }
 
@@ -563,6 +565,8 @@ void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emis
   lighting_shader.set_float("emissionStrength", emission_strength);
   lighting_shader.set_float("time", static_cast<float>(glfwGetTime()));
   lighting_shader.set_bool("emissive", true);
+  lighting_shader.set_bool("specular", true);
+  lighting_shader.set_bool("diffuse", true);
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, diffuse);

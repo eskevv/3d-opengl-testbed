@@ -2,10 +2,14 @@
 #define __MODEL_H__
 
 #include "mesh.hpp"
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <vector>
+#include <map>
+
+// enum class TexturesEnabled { DIFFUSE, SPECULAR, EMISSION };
 
 class Model {
 public:

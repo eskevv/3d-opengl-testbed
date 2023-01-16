@@ -36,19 +36,37 @@ void Mesh::setup_mesh() {
 void Mesh::draw(const Shader &shader) {
   unsigned int diffuse_nr{1};
   unsigned int specular_nr{1};
+  unsigned int emission_nr{1};
+  bool has_diffuse = {false};
+  bool has_specular = {false};
+  bool has_emission = {false};
 
   for (size_t i{0}; i < textures.size(); i++) {
     glActiveTexture(GL_TEXTURE0 + i);
 
-    bool is_diffuse{textures[i].type == "texture_diffuse"};
-    bool is_specular{textures[i].type == "texture_specular"};
-    std::string number{is_diffuse ? std::to_string(diffuse_nr++) : is_specular ? std::to_string(specular_nr++) : 0};
+    std::string number{};
+
+    if (textures[i].type == "texture_diffuse") {
+      number = std::to_string(diffuse_nr++);
+      has_diffuse = true;
+    }
+    if (textures[i].type == "texture_specular") {
+      number = std::to_string(specular_nr++);
+      has_specular = true;
+    }
+    if (textures[i].type == "texture_emission") {
+      number = std::to_string(emission_nr++);
+      has_emission = true;
+    }
 
     shader.set_int("material." + textures[i].type + number, i);
     glBindTexture(GL_TEXTURE_2D, textures[i].id);
   }
 
-  shader.set_bool("emissive", false);
+  // shader.set_bool("emissive", has_emission);
+  // shader.set_bool("specular", has_specular);
+  // shader.set_bool("diffuse", has_diffuse);
+
   glBindVertexArray(vao_);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);

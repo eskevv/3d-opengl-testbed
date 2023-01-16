@@ -59,9 +59,10 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform Material material;
 uniform float time;
 uniform bool emissive;
+uniform bool specular;
+uniform bool diffuse;
 uniform float emissionSpeed;
 uniform float emissionStrength;
-// uniform sampler2D texture_diffuse1;
 
 // Definitions
 
@@ -74,7 +75,7 @@ vec3 emissionMap = vec3(texture(material.emission, TexCoords + vec2(0.0, time * 
 vec3 CalcDirLight(DirLight light);
 vec3 CalcPointLight(PointLight light);
 vec3 CalcSpotLight(SpotLight light);
-
+vec3 ComputeAmbient(vec3 color);
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir);
 vec3 ComputeSpecular(vec3 color, vec3 lightDir);
 float ComputeAttenuation(vec3 position, float c, float l, float q);
@@ -98,15 +99,13 @@ void main() {
         result += CalcPointLight(pointLights[i]);
     }
 
-    // result += vec3(texture(texture_diffuse1, TexCoords));
-
     FragColor = vec4(result, 1.0);
 }
 
 // Light Casters
 
 vec3 CalcDirLight(DirLight light) {
-    vec3 ambient  = light.ambient * diffuseMap;
+    vec3 ambient  = ComputeAmbient(light.ambient);
     vec3 diffuse  = ComputeDiffuse(light.diffuse, -light.direction);
     vec3 specular = ComputeSpecular(light.specular, -light.direction);
 
@@ -117,7 +116,7 @@ vec3 CalcPointLight(PointLight light) {
     vec3 lightDir = normalize(light.position - FragPos);
     float attenuation = ComputeAttenuation(light.position, light.constant, light.linear, light.quadratic);
 
-    vec3 ambient  = light.ambient * diffuseMap;
+    vec3 ambient  = ComputeAmbient(light.ambient);
     vec3 diffuse  = ComputeDiffuse(light.diffuse, lightDir);
     vec3 specular = ComputeSpecular(light.specular, lightDir);
 
@@ -133,7 +132,7 @@ vec3 CalcSpotLight(SpotLight light) {
     float attenuation = ComputeAttenuation(light.position, light.constant, light.linear, light.quadratic);
     float intensity = ComputeIntensity(light, -lightDir);
 
-    vec3 ambient  = light.ambient * diffuseMap;
+    vec3 ambient  = ComputeAmbient(light.ambient);
     vec3 diffuse = ComputeDiffuse(light.diffuse, lightDir);
     vec3 specular = ComputeSpecular(light.specular, lightDir);
 
@@ -158,6 +157,9 @@ float ComputeAttenuation(vec3 position, float c, float l, float q) {
 }
 
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
+    if (!diffuse)
+      return vec3(0);
+
     float diffuseAngle = max(dot(lightDir, Normal), 0.0);
     vec3 emissivenes = emissionMap * (specularMap == vec3(0) ? vec3(1) : vec3(0));
     vec3 emission = emissive ? emissivenes * (color * emissionStrength) * diffuseAngle : vec3(0);
@@ -166,8 +168,15 @@ vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
 }
 
 vec3 ComputeSpecular(vec3 color, vec3 lightDir) {
+    if (!specular)
+      return vec3(0);
+
     vec3 viewDir = normalize(-FragPos);
     vec3 reflectDir = reflect(-lightDir, Normal);
     float shininess = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     return color * shininess * specularMap;
+}
+
+vec3 ComputeAmbient(vec3 color) {
+  return diffuse ? color * diffuseMap : color;
 }
