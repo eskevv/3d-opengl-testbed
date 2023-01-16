@@ -447,8 +447,6 @@ void render_imgui() {
 
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the first spot light (will implement cycling)");
-  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f},
-                     "HINTS: What may appear to be shadows is linear mipmapping over steel borders.");
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
   ImGui::Separator();
@@ -456,7 +454,9 @@ void render_imgui() {
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "DIFFUSE: Color intensity affected by the angle of the light");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "SPECULAR: Shiny or glosiness effect perceived by a view space angle");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
-                     "By Default: All emission is affected by diffuse angle and color per light");
+                     "! By Default: All emission is affected by diffuse angle and color per light");
+  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
+                     "! What may appear to be shadows is linear mipmapping over steel borders.");
 
   ImGui::Separator();
   ImGui::ColorEdit3("Clear Color", (float *)&clear_color);
@@ -464,6 +464,15 @@ void render_imgui() {
   ImGui::SliderFloat("Material Shine", &material_shininess, 0.0f, 1.0f);
   ImGui::SliderFloat("Emission Speed", &emission_speed, 0.0f, 10.0f);
   ImGui::SliderFloat("Emission Strength", &emission_strength, 0.0f, 10.0f);
+
+  ImGui::Separator();
+  if (ImGui::CollapsingHeader("Model Properties")) {
+    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
+                       "! Models won't always contain specified masks; \nBut also won't cause errors if not supported.");
+    ImGui::Checkbox("With Diffuse", &backpack.has_diffuse);
+    ImGui::Checkbox("With Specular", &backpack.has_specular);
+    ImGui::Checkbox("With Emission", &backpack.has_emission);
+  }
 
   ImGui::Separator();
   for (size_t i{0}; i < 1; i++) {
@@ -476,14 +485,6 @@ void render_imgui() {
   ImGui::Separator();
   for (size_t i{0}; i < 4; i++) {
     header_point(("Point Light #" + std::to_string(i + 1)).c_str(), &point_lights[i]);
-  }
-
-  ImGui::Separator();
-  if (ImGui::CollapsingHeader("Model Properties")) {
-    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "HINT: Models won't always contain specified masks; \nBut also won't cause errors if not supported.");
-    ImGui::Checkbox("With Diffuse", &backpack.has_diffuse);
-    ImGui::Checkbox("With Specular", &backpack.has_specular);
-    ImGui::Checkbox("With Emission", &backpack.has_emission);
   }
 
   ImGui::End();
