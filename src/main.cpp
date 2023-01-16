@@ -22,6 +22,7 @@
 void render_cube(float angle, glm::vec3 position);
 void render_lamp(LightSource light, glm::vec3 pos);
 void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos);
+void render_all();
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -64,6 +65,12 @@ float material_shininess{0.15f};
 float emission_strength{1.3f};
 float emission_speed{0.45f};
 Model backpack;
+const size_t NUM_CUBES{1210};
+
+glm::vec3 cube_positions[NUM_CUBES] = {
+    glm::vec3(0.0f, 0.0f, 0.0f),   glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f), glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
+    glm::vec3(1.5f, 0.2f, -1.5f),  glm::vec3(-1.3f, 1.0f, -1.5f)};
 
 // opengl
 Shader lighting_shader;
@@ -72,9 +79,14 @@ Shader model_shader;
 VertexArray cube_vao;
 VertexArray light_vao;
 
+unsigned int diffuse_map;
+unsigned int specular_map;
+unsigned int emission_map;
+
 // timing
 float delta_time{0.0f};
 float last_frame{0.0f};
+float current_frame{0.0f};
 
 int main() {
   // initialization steps
@@ -140,13 +152,6 @@ int main() {
                       0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
-  const size_t NUM_CUBES{1210};
-  glm::vec3 cube_positions[NUM_CUBES] = {glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0f, 5.0f, -15.0f),
-                                         glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
-                                         glm::vec3(2.4f, -0.4f, -3.5f),  glm::vec3(-1.7f, 3.0f, -7.5f),
-                                         glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
-                                         glm::vec3(1.5f, 0.2f, -1.5f),   glm::vec3(-1.3f, 1.0f, -1.5f)};
-
   unsigned const int WIDTH{40};
   for (size_t i{10}; i < NUM_CUBES; i++) {
     float x{(i - 10) / WIDTH};
@@ -171,16 +176,15 @@ int main() {
   light_vao.push_data<float>(3);
   light_vao.unbind();
 
-  unsigned int diffuse_map = {load_texture("res/container2.png")};
-  unsigned int specular_map = {load_texture("res/container2_specular.png")};
-  unsigned int emission_map = {load_texture("res/matrix.jpg")};
+  diffuse_map = load_texture("res/container2.png");
+  specular_map = load_texture("res/container2_specular.png");
+  emission_map = load_texture("res/matrix.jpg");
 
   while (!glfwWindowShouldClose(window)) {
     // per-frame time logic
-    float current_frame = {static_cast<float>(glfwGetTime())};
+    current_frame = {static_cast<float>(glfwGetTime())};
     delta_time = current_frame - last_frame;
     last_frame = current_frame;
-    camera.MovementSpeed = move_speed;
 
     // input
     processInput(window);
@@ -188,48 +192,10 @@ int main() {
     // updates
     stage_setup();
 
-    /* RENDER --> */
-    // -------------
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // render
+    render_all();
 
-    // cubes
-    use_lighting(diffuse_map, specular_map, emission_map);
-    cube_vao.bind();
-    for (size_t i{0}; i < NUM_CUBES; i++) {
-      // rotate only the first 10 cubes
-      float angle{i < 10 ? 20.0f * i + current_frame / 4 : 0.0f};
-      render_cube(angle, cube_positions[i]);
-    }
-
-    // model
-    render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
-
-    // lamp objects
-    light_vao.bind();
-    light_cube_shader.use();
-    light_cube_shader.set_matrix("view", view);
-    light_cube_shader.set_matrix("projection", projection);
-
-    // spotlights
-    for (size_t i{0}; i < 1; i++) {
-      if (!spot_lights[i].enabled)
-        continue;
-      render_lamp(spot_lights[i], spot_lights[i].position);
-    }
-
-    // point lights
-    for (size_t i{0}; i < 4; i++) {
-      if (!point_lights[i].enabled)
-        continue;
-      render_lamp(point_lights[i], point_lights[i].position);
-    }
-
-    render_imgui();
-
-    /* <- RENDER */
-    // ------------
-
-    glfwSwapBuffers(window);
+    // poll
     glfwPollEvents();
   }
 
@@ -317,6 +283,10 @@ void processInput(GLFWwindow *window) {
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
   // width and height will be significantly larger than specified on retina displays.
   glViewport(0, 0, width, height);
+  current_frame = {static_cast<float>(glfwGetTime())};
+  delta_time = current_frame - last_frame;
+  last_frame = current_frame;
+  render_all();
 }
 
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
@@ -376,6 +346,18 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
 }
 
 // imgui
+void tree_directional(const char *label, DirectionalLight *directional_light) {
+  if (ImGui::TreeNode(label)) {
+    ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
+    ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.01f, -1.0f, 1.0f);
+    ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
+    ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
+    ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
+    ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
+    ImGui::TreePop();
+  }
+}
+
 void tree_points(const char *label, PointLight *point_light) {
   if (ImGui::TreeNode(label)) {
     ImGui::Checkbox("Enabled", (bool *)(&point_light->enabled));
@@ -387,22 +369,11 @@ void tree_points(const char *label, PointLight *point_light) {
     ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
     if (ImGui::TreeNode("Attenuation")) {
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! The distance traveled by the light.");
       ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f);
       ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f);
       ImGui::TreePop();
     }
-    ImGui::TreePop();
-  }
-}
-
-void tree_directional(const char *label, DirectionalLight *directional_light) {
-  if (ImGui::TreeNode(label)) {
-    ImGui::Checkbox("Enabled", (bool *)(&directional_light->enabled));
-    ImGui::DragFloat3("Direction", (float *)(&directional_light->direction), 0.01f, -1.0f, 1.0f);
-    ImGui::ColorEdit3("Color", (float *)(&directional_light->color));
-    ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
-    ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
-    ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
     ImGui::TreePop();
   }
 }
@@ -417,6 +388,7 @@ void tree_spot(const char *label, SpotLight *spot_light) {
     ImGui::SliderFloat("Diffuse Strength", (float *)(&spot_light->diffuse_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
     if (ImGui::TreeNode("Attenuation")) {
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! The distance traveled by the light.");
       ImGui::SliderFloat("Linear", (float *)(&spot_light->linear), 0.0f, 1.0f);
       ImGui::SliderFloat("Quadratic", (float *)(&spot_light->quadratic), 0.0f, 2.0f);
       ImGui::TreePop();
@@ -435,11 +407,50 @@ void tree_spot(const char *label, SpotLight *spot_light) {
       if (initial_outer < initial_inner) {
         spot_light->cutoff = spot_light->outer_cutoff;
       }
-
       ImGui::TreePop();
     }
     ImGui::TreePop();
   }
+}
+
+void render_all() {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // cubes
+  use_lighting(diffuse_map, specular_map, emission_map);
+  cube_vao.bind();
+  for (size_t i{0}; i < NUM_CUBES; i++) {
+    // rotate only the first 10 cubes
+    float angle{i < 10 ? 20.0f * i + current_frame / 4 : 0.0f};
+    render_cube(angle, cube_positions[i]);
+  }
+
+  // model
+  render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
+
+  // lamp objects
+  light_vao.bind();
+  light_cube_shader.use();
+  light_cube_shader.set_matrix("view", view);
+  light_cube_shader.set_matrix("projection", projection);
+
+  // spotlights
+  for (size_t i{0}; i < 1; i++) {
+    if (!spot_lights[i].enabled)
+      continue;
+    render_lamp(spot_lights[i], spot_lights[i].position);
+  }
+
+  // point lights
+  for (size_t i{0}; i < 4; i++) {
+    if (!point_lights[i].enabled)
+      continue;
+    render_lamp(point_lights[i], point_lights[i].position);
+  }
+
+  render_imgui();
+
+  glfwSwapBuffers(window);
 }
 
 void render_imgui() {
@@ -523,6 +534,7 @@ void render_imgui() {
 // setup
 void stage_setup() {
   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
+  camera.MovementSpeed = move_speed;
   projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
   view = camera.get_view_matrix();
 }
