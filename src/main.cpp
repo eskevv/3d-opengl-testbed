@@ -190,15 +190,6 @@ int main() {
     }
 
     // model
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(9.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-
-    model_shader.use();
-    model_shader.set_matrix("projection", projection);
-    model_shader.set_matrix("view", view);
-    model_shader.set_matrix("model", model);
-    backpack.draw(model_shader);
 
     // lamp objects
     light_vao.bind();
@@ -219,6 +210,16 @@ int main() {
         continue;
       render_lamp(point_lights[i], point_lights[i].position);
     }
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(9.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+
+    model_shader.use();
+    model_shader.set_matrix("projection", projection);
+    model_shader.set_matrix("view", view);
+    model_shader.set_matrix("model", model);
+    backpack.draw(model_shader);
 
     render_imgui();
 
