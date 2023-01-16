@@ -54,6 +54,7 @@ float last_y{SCR_HEIGHT / 2.0f};
 bool first_mouse{true};
 bool show_gui{true};
 bool can_press{true};
+bool imgui_hovering{false};
 
 glm::mat4 projection;
 glm::mat4 view;
@@ -62,7 +63,7 @@ glm::mat4 view;
 DirectionalLight dir_lights[1];
 SpotLight spot_lights[1];
 PointLight point_lights[4];
-float material_shininess{0.15f};
+float material_shininess{0.02f};
 float emission_strength{1.3f};
 float emission_speed{0.45f};
 Model backpack;
@@ -281,6 +282,7 @@ void processInput(GLFWwindow *window) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     } else {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      imgui_hovering = false;
     }
   }
 
@@ -322,6 +324,9 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+  if (imgui_hovering)
+    return;
+
   camera.process_mouse_scroll(static_cast<float>(yoffset));
 }
 
@@ -364,6 +369,7 @@ void tree_directional(const char *label, DirectionalLight *directional_light) {
     ImGui::SliderFloat("Ambient Strength", (float *)(&directional_light->ambient_strength), 0.0f, 1.0f);
     ImGui::SliderFloat("Diffuse Strength", (float *)(&directional_light->diffuse_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&directional_light->specular_strength), 0.0f, 10.0f);
+    ImGui::Separator();
     ImGui::TreePop();
   }
 }
@@ -376,16 +382,14 @@ void tree_points(const char *label, PointLight *point_light) {
     ImGui::SliderFloat("Ambient Strength", (float *)(&point_light->ambient_strength), 0.0f, 1.0f);
     ImGui::SliderFloat("Diffuse Strength", (float *)(&point_light->diffuse_strength), 0.0f, 10.0f);
     ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
-    ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
-    ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
     if (ImGui::TreeNode("Attenuation")) {
       ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! The distance traveled by the light.");
-      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
-                         "! Stronger lights have significantly lower quadratic values compared to linear.");
-      ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f, "%.0001");
-      ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f, "%.0001");
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! Stronger lights have a significantly lower quadratic value.");
+      ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f, "%f");
+      ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f, "%f");
       ImGui::TreePop();
     }
+    ImGui::Separator();
     ImGui::TreePop();
   }
 }
@@ -422,6 +426,7 @@ void tree_spot(const char *label, SpotLight *spot_light) {
       }
       ImGui::TreePop();
     }
+    ImGui::Separator();
     ImGui::TreePop();
   }
 }
@@ -477,20 +482,15 @@ void render_imgui() {
   // bool show_demo_window = true;
   // ImGui::ShowDemoWindow(&show_demo_window);
 
-  ImGui::Begin("Editor");
-  if (ImGui::CollapsingHeader("Help")) {
-    ImGui::Text("PROGRAMMER GUIDE:");
-    ImGui::BulletText("See the ShowDemoWindow() code in imgui_demo.cpp. <- you are here!");
-    ImGui::BulletText("See comments in imgui.cpp.");
-    ImGui::BulletText("See example applications in the examples/ folder.");
-    ImGui::BulletText("Read the FAQ at http://www.dearimgui.org/faq/");
-    ImGui::BulletText("Set 'io.ConfigFlags |= NavEnableKeyboard' for keyboard controls.");
-    ImGui::BulletText("Set 'io.ConfigFlags |= NavEnableGamepad' for gamepad controls.");
-    ImGui::Separator();
+  ImGuiWindowFlags window_flags = 0;
+  window_flags |= ImGuiWindowFlags_NoTitleBar;
+  window_flags |= ImGuiWindowFlags_NoBackground;
+  window_flags |= ImGuiWindowFlags_NoMove;
+  window_flags |= ImGuiWindowFlags_NoResize;
 
-    ImGui::Text("USER GUIDE:");
-    ImGui::ShowUserGuide();
-  }
+  imgui_hovering = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
+
+  ImGui::Begin("Editor", nullptr, window_flags);
 
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Press C to toggle cursor | WASD to move | SPACE to elevate");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys & Q / E controls the first spot light");
@@ -501,7 +501,7 @@ void render_imgui() {
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "DIFFUSE: Color intensity affected by the angle of the light");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "SPECULAR: Shiny or glosiness effect perceived by a view space angle");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
-                     "! By Default: All emission is affected by diffuse angle and color per light");
+                     "! By Default: All emission is affected by diffuse angle and color per light.");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! What may appear to be shadows is linear mipmapping over steel borders.");
 
   ImGui::Separator();
@@ -683,8 +683,13 @@ void initialize_imgui() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
 
-  ImGui::StyleColorsClassic();
-
+  ImGui::StyleColorsDark();
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 6.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8.0f, 6.0f});
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2{10.0f, 16.0f});
+  ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 11.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 2.0f);
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init("#version 330");
