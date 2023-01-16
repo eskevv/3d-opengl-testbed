@@ -29,6 +29,8 @@ void Mesh::setup_mesh() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, tex_coords));
 
   glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Mesh::draw(const Shader &shader) {
@@ -46,7 +48,7 @@ void Mesh::draw(const Shader &shader) {
     glBindTexture(GL_TEXTURE_2D, textures[i].id);
   }
 
-  glActiveTexture(GL_TEXTURE0);
+  shader.set_bool("emissive", false);
   glBindVertexArray(vao_);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);

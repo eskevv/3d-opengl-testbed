@@ -58,8 +58,10 @@ uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform Material material;
 uniform float time;
+uniform bool emissive;
 uniform float emissionSpeed;
 uniform float emissionStrength;
+// uniform sampler2D texture_diffuse1;
 
 // Definitions
 
@@ -95,6 +97,8 @@ void main() {
         if (!pointLights[i].enabled) continue;
         result += CalcPointLight(pointLights[i]);
     }
+
+    // result += vec3(texture(texture_diffuse1, TexCoords));
 
     FragColor = vec4(result, 1.0);
 }
@@ -156,7 +160,7 @@ float ComputeAttenuation(vec3 position, float c, float l, float q) {
 vec3 ComputeDiffuse(vec3 color, vec3 lightDir) {
     float diffuseAngle = max(dot(lightDir, Normal), 0.0);
     vec3 emissivenes = emissionMap * (specularMap == vec3(0) ? vec3(1) : vec3(0));
-    vec3 emission = emissivenes * (color * emissionStrength) * diffuseAngle;
+    vec3 emission = emissive ? emissivenes * (color * emissionStrength) * diffuseAngle : vec3(0);
 
     return color * diffuseAngle * diffuseMap + emission;
 }

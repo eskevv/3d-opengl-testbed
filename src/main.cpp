@@ -32,6 +32,7 @@ void processInput(GLFWwindow *window);
 void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emission);
 void render_cube(float angle, glm::vec3 position);
 void render_lamp(LightSource light, glm::vec3 pos);
+void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos);
 void stage_setup();
 
 // window settings
@@ -144,9 +145,8 @@ int main() {
   }
 
   // configure the standard cube VAO
-  VertexArray cube_va{sizeof(vertices), 8 * sizeof(float), vertices};
+  VertexArray cube_va = {sizeof(vertices), 8 * sizeof(float), vertices};
   std::memcpy(&cube_vao, &cube_va, sizeof(VertexArray));
-
   cube_vao.bind();
   cube_vao.push_data<float>(3);
   cube_vao.push_data<float>(3);
@@ -154,7 +154,8 @@ int main() {
   cube_vao.unbind();
 
   // configure the light's VAO
-  light_vao = VertexArray{sizeof(vertices), 8 * sizeof(float), vertices};
+  VertexArray light_va = {sizeof(vertices), 8 * sizeof(float), vertices};
+  std::memcpy(&light_vao, &light_va, sizeof(Vertex));
   light_vao.bind();
   light_vao.push_data<float>(3);
   light_vao.unbind();
@@ -190,6 +191,10 @@ int main() {
     }
 
     // model
+    // model_shader.use();
+    // model_shader.set_matrix("projection", projection);
+    // model_shader.set_matrix("view", view);
+    render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
 
     // lamp objects
     light_vao.bind();
@@ -210,16 +215,6 @@ int main() {
         continue;
       render_lamp(point_lights[i], point_lights[i].position);
     }
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(9.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-
-    model_shader.use();
-    model_shader.set_matrix("projection", projection);
-    model_shader.set_matrix("view", view);
-    model_shader.set_matrix("model", model);
-    backpack.draw(model_shader);
 
     render_imgui();
 
@@ -360,6 +355,13 @@ void render_lamp(LightSource light, glm::vec3 pos) {
   light_cube_shader.set_float("lightColor", color.x, color.y, color.z);
   light_cube_shader.set_matrix("model", model);
   glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
+  glm::mat4 model = {glm::translate(glm::mat4{1.0f}, pos)};
+  model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+  shader.set_matrix("model", model);
+  obj_model.draw(shader);
 }
 
 // imgui
@@ -560,6 +562,7 @@ void use_lighting(unsigned int diffuse, unsigned int specular, unsigned int emis
   lighting_shader.set_float("emissionSpeed", emission_speed);
   lighting_shader.set_float("emissionStrength", emission_strength);
   lighting_shader.set_float("time", static_cast<float>(glfwGetTime()));
+  lighting_shader.set_bool("emissive", true);
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, diffuse);
