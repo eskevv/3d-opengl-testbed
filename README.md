@@ -9,17 +9,18 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 
    1. *[ Eular Angles, Panning , Movement ]*  
    
-* Camera Class & Projections: local space -> world space -> view space -> clip space -> screen space
+* Camera Class & Projections:
+   1. *local space -> world space -> view space -> clip space -> screen space*
 * Texture Loading
+* Mesh Loading
 * Lighting with fragment shaders (Phong lightning model):  
 
    1. *[ Directional, Point lights, Spot lights]*  
    2. *Attenuation (light perception across distances)*  
-   
+
 * Smoothed light boundaries
 * Materials & Diffuse maps
-* Interface editor  
-* Model Loading
+* Editor  
 
 **To-Implement:**  
 - [x] ~~Interface editor~~ (01/12/2023)  
@@ -30,7 +31,6 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 - [ ] Shadows  
 
 ![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.gif?raw=true)
-
 
 ---
 ### Running: 
