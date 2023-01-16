@@ -7,14 +7,14 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 **What's currently in the build:**
 * 3D transformations:  
 
-   *1. [ Eular Angles, Panning , Movement ]*  
+   1. *[ Eular Angles, Panning , Movement ]*  
    
 * Camera Class & Projections: local space -> world space -> view space -> clip space -> screen space
 * Texture Loading
 * Lighting with fragment shaders (Phong lightning model):  
 
-   *1. [ Directional, Point lights, Spot lights]*  
-   *2. Attenuation (light perception across distances)*  
+   1. *[ Directional, Point lights, Spot lights]*  
+   2. *Attenuation (light perception across distances)*  
    
 * Smoothed light boundaries
 * Materials & Diffuse maps
