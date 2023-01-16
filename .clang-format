@@ -1,13 +1,13 @@
 ---
 Language:        Cpp
 BasedOnStyle:  LLVM
-IndentWidth:     3
-AllowShortIfStatementsOnASingleLine: true
-ColumnLimit:     148
+ColumnLimit:     130
 SortIncludes:    false
-AccessModifierOffset: -3
-AllowShortFunctionsOnASingleLine: Empty
-AlwaysBreakTemplateDeclarations: Yes
+# IndentWidth:     3
+# AllowShortIfStatementsOnASingleLine: true
+# AccessModifierOffset: -3
+# AllowShortFunctionsOnASingleLine: Empty
+# AlwaysBreakTemplateDeclarations: Yes
 
 # AlignAfterOpenBracket: Align
 # AlignArrayOfStructures: None
