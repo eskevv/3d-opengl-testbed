@@ -53,6 +53,7 @@ float last_x{SCR_WIDTH / 2.0f};
 float last_y{SCR_HEIGHT / 2.0f};
 bool first_mouse{true};
 bool show_gui{true};
+bool can_press{true};
 
 glm::mat4 projection;
 glm::mat4 view;
@@ -268,14 +269,23 @@ void processInput(GLFWwindow *window) {
   }
   spot_lights[0].position += light_offset * delta_time;
 
-  if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    show_gui = true;
-    first_mouse = true;
+  if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+    if (!can_press)
+      return;
+
+    can_press = false;
+    show_gui = !show_gui;
+
+    if (show_gui) {
+      first_mouse = true;
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    } else {
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
   }
-  if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    show_gui = false;
+
+  if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE) {
+    can_press = true;
   }
 }
 
@@ -370,8 +380,10 @@ void tree_points(const char *label, PointLight *point_light) {
     ImGui::SliderFloat("Specular Strength", (float *)(&point_light->specular_strength), 0.0f, 10.0f);
     if (ImGui::TreeNode("Attenuation")) {
       ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! The distance traveled by the light.");
-      ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f);
-      ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f);
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
+                         "! Stronger lights have significantly lower quadratic values compared to linear.");
+      ImGui::SliderFloat("Linear", (float *)(&point_light->linear), 0.0f, 1.0f, "%.0001");
+      ImGui::SliderFloat("Quadratic", (float *)(&point_light->quadratic), 0.0f, 2.0f, "%.0001");
       ImGui::TreePop();
     }
     ImGui::TreePop();
@@ -389,8 +401,9 @@ void tree_spot(const char *label, SpotLight *spot_light) {
     ImGui::SliderFloat("Specular Strength", (float *)(&spot_light->specular_strength), 0.0f, 10.0f);
     if (ImGui::TreeNode("Attenuation")) {
       ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! The distance traveled by the light.");
-      ImGui::SliderFloat("Linear", (float *)(&spot_light->linear), 0.0f, 1.0f);
-      ImGui::SliderFloat("Quadratic", (float *)(&spot_light->quadratic), 0.0f, 2.0f);
+      ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! Stronger lights have a significantly lower quadratic value.");
+      ImGui::SliderFloat("Linear", (float *)(&spot_light->linear), 0.0f, 1.0f, "%f");
+      ImGui::SliderFloat("Quadratic", (float *)(&spot_light->quadratic), 0.0f, 2.0f, "%f");
       ImGui::TreePop();
     }
     if (ImGui::TreeNode("Intensity")) {
@@ -479,8 +492,8 @@ void render_imgui() {
     ImGui::ShowUserGuide();
   }
 
-  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: 1 to use cursor | 2 to pan | WASD to move | SPACE to elevate");
-  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys controls the first spot light (will implement cycling)");
+  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Press C to toggle cursor | WASD to move | SPACE to elevate");
+  ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.74f, 1.0f}, "HINTS: Arrow Keys & Q / E controls the first spot light");
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
   ImGui::Separator();
@@ -532,6 +545,7 @@ void render_imgui() {
 }
 
 // setup
+
 void stage_setup() {
   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
   camera.MovementSpeed = move_speed;
