@@ -480,6 +480,7 @@ void render_imgui() {
 
   ImGui::Separator();
   if (ImGui::CollapsingHeader("Model Properties")) {
+    ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "HINT: Models won't always contain specified masks; \nBut also won't cause errors if not supported.");
     ImGui::Checkbox("With Diffuse", &backpack.has_diffuse);
     ImGui::Checkbox("With Specular", &backpack.has_specular);
     ImGui::Checkbox("With Emission", &backpack.has_emission);
