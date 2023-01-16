@@ -13,14 +13,14 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
    1. *local space -> world space -> view space -> clip space -> screen space*
 * Texture Loading
 * Mesh Loading
-* Lighting with fragment shaders (Phong lightning model):  
+* Lighting (Phong lightning model):  
 
    1. *[ Directional, Point lights, Spot lights]*  
    2. *Attenuation (light perception across distances)*  
-
-* Smoothed light boundaries
-* Materials & Diffuse maps
-* Editor  
+   3. *Smoothed lighting*
+   4. *Materials & Diffuse Maps*
+   
+* Editor (Immediate-State GUI)
 
 **To-Implement:**  
 - [x] ~~Interface editor~~ (01/12/2023)  
