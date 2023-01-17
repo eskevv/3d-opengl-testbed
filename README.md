@@ -29,6 +29,8 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 - [ ] Skeletal Animations  
 - [ ] SkyBoxes  
 - [ ] Shadows  
+- [ ] Occlusion  
+- [ ] Z-Fighting Optimizations  
 
 ![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.gif?raw=true)
 
