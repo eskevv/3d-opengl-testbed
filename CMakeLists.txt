@@ -15,10 +15,7 @@ aux_source_directory("vendor/glad-3.3core/src" Glad)
 add_executable(${PROJECT_NAME}
   ${Src}
   ${ImGui}
-  ${GlState}
   ${Glad}
-  ${Models}
-  ${Transformations}
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
