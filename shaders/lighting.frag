@@ -178,5 +178,7 @@ vec3 ComputeSpecular(vec3 color, vec3 lightDir) {
 }
 
 vec3 ComputeAmbient(vec3 color) {
-  return diffuse ? color * diffuseMap : color;
+  vec3 output = diffuse ? color * diffuseMap : color;
+
+  return output;
 }

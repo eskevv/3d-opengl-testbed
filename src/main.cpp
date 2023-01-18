@@ -1,7 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -9,14 +9,14 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
-#include <iostream>
-
 #include "shader.hpp"
 #include "camera.hpp"
 #include "utils.hpp"
 #include "model.hpp"
 #include "light_sources.hpp"
 #include "vertex_array.hpp"
+
+#include <iostream>
 
 // function prototypes
 void render_cube(float angle, glm::vec3 position);
@@ -72,7 +72,7 @@ const size_t NUM_CUBES{1210};
 glm::vec3 cube_positions[NUM_CUBES] = {
     glm::vec3(0.0f, 0.0f, 0.0f),   glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
     glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f), glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
-    glm::vec3(1.5f, 0.2f, -1.5f),  glm::vec3(-1.3f, 1.0f, -1.5f)};
+    glm::vec3(1.5f, 0.2f, -1.5f),  glm::vec3(-1.3f, 1.0f, -1.4f)};
 
 // opengl
 Shader lighting_shader;
@@ -124,7 +124,7 @@ int main() {
   point_lights[3].diffuse_strength = 0.919f;
   point_lights[3].specular_strength = 2.31f;
 
-  backpack = Model{"res/backpack/backpack.obj"};
+  backpack = Model{"res/models/backpack/backpack.obj"};
   backpack.has_diffuse = true;
   backpack.has_specular = true;
   backpack.has_emission = true;
@@ -155,10 +155,11 @@ int main() {
                       -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
   unsigned const int WIDTH{40};
-  for (size_t i{10}; i < NUM_CUBES; i++) {
-    float x{(i - 10) / WIDTH};
+  for (unsigned int i{10}; i < NUM_CUBES; i++) {
+    float x{(i - 10) / WIDTH + (i * 0.0005f)};
     float y{-6.0f};
-    float z{(i - 10) % WIDTH};
+    unsigned int z_step = {(i - 10) % WIDTH};
+    float z{z_step + z_step * 0.008f};
     cube_positions[i] = glm::vec3{x, y, z};
   }
 
@@ -166,9 +167,9 @@ int main() {
   VertexArray cube_va = {sizeof(vertices), 8 * sizeof(float), vertices};
   std::memcpy(&cube_vao, &cube_va, sizeof(VertexArray));
   cube_vao.bind();
-  cube_vao.push_data<float>(3);
-  cube_vao.push_data<float>(3);
-  cube_vao.push_data<float>(2);
+  cube_vao.push_data<float>(3u);
+  cube_vao.push_data<float>(3u);
+  cube_vao.push_data<float>(2u);
   cube_vao.unbind();
 
   // configure the light's VAO
@@ -178,9 +179,9 @@ int main() {
   light_vao.push_data<float>(3);
   light_vao.unbind();
 
-  diffuse_map = load_texture("res/container2.png");
-  specular_map = load_texture("res/container2_specular.png");
-  emission_map = load_texture("res/matrix.jpg");
+  diffuse_map = load_texture("res/textures/container2.png");
+  specular_map = load_texture("res/textures/container2_specular.png");
+  emission_map = load_texture("res/textures/matrix.jpg");
 
   while (!glfwWindowShouldClose(window)) {
     // per-frame time logic
@@ -360,6 +361,46 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
   obj_model.draw(shader);
 }
 
+void render_all() {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  // cubes
+  use_lighting(diffuse_map, specular_map, emission_map);
+  cube_vao.bind();
+  for (size_t i{0}; i < NUM_CUBES; i++) {
+    // rotate only the first 10 cubes
+    float angle{i < 10 ? 20.0f * i + current_frame / 4 : 0.0f};
+    render_cube(angle, cube_positions[i]);
+  }
+
+  // model
+  render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
+
+  // lamp objects
+  light_vao.bind();
+  light_cube_shader.use();
+  light_cube_shader.set_matrix("view", view);
+  light_cube_shader.set_matrix("projection", projection);
+
+  // spotlights
+  for (size_t i{0}; i < 1; i++) {
+    if (!spot_lights[i].enabled)
+      continue;
+    render_lamp(spot_lights[i], spot_lights[i].position);
+  }
+
+  // point lights
+  for (size_t i{0}; i < 4; i++) {
+    if (!point_lights[i].enabled)
+      continue;
+    render_lamp(point_lights[i], point_lights[i].position);
+  }
+
+  render_imgui();
+
+  glfwSwapBuffers(window);
+}
+
 // imgui
 void tree_directional(const char *label, DirectionalLight *directional_light) {
   if (ImGui::TreeNode(label)) {
@@ -431,46 +472,6 @@ void tree_spot(const char *label, SpotLight *spot_light) {
   }
 }
 
-void render_all() {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // cubes
-  use_lighting(diffuse_map, specular_map, emission_map);
-  cube_vao.bind();
-  for (size_t i{0}; i < NUM_CUBES; i++) {
-    // rotate only the first 10 cubes
-    float angle{i < 10 ? 20.0f * i + current_frame / 4 : 0.0f};
-    render_cube(angle, cube_positions[i]);
-  }
-
-  // model
-  render_model(backpack, lighting_shader, glm::vec3{9.0f, 0.0f, 0.0f});
-
-  // lamp objects
-  light_vao.bind();
-  light_cube_shader.use();
-  light_cube_shader.set_matrix("view", view);
-  light_cube_shader.set_matrix("projection", projection);
-
-  // spotlights
-  for (size_t i{0}; i < 1; i++) {
-    if (!spot_lights[i].enabled)
-      continue;
-    render_lamp(spot_lights[i], spot_lights[i].position);
-  }
-
-  // point lights
-  for (size_t i{0}; i < 4; i++) {
-    if (!point_lights[i].enabled)
-      continue;
-    render_lamp(point_lights[i], point_lights[i].position);
-  }
-
-  render_imgui();
-
-  glfwSwapBuffers(window);
-}
-
 void render_imgui() {
   if (!show_gui)
     return;
@@ -502,6 +503,7 @@ void render_imgui() {
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 1.00f, 1.0f}, "SPECULAR: Shiny or glosiness effect perceived by a view space angle");
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f},
                      "! By Default: All emission is affected by diffuse angle and color per light.");
+
   ImGui::TextColored(ImVec4{0.8f, 0.4f, 0.20f, 1.0f}, "! What may appear to be shadows is linear mipmapping over steel borders.");
 
   ImGui::Separator();
@@ -674,6 +676,7 @@ void initialize_testbed() {
 
   // configure global opengl state
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_STENCIL_TEST);
   glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
 }
 

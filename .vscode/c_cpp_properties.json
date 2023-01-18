@@ -1,21 +1,26 @@
 {
-    "configurations": [
-        {
-            "name": "Win32",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "D:/Developer/libraries/include"
-            ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "compilerPath": "D:/Programs/mingw64/bin/g++.exe",
-            "cStandard": "gnu17",
-            "intelliSenseMode":"windows-gcc-x64",
-            "cppStandard": "c++20"
-        }
-    ],
-    "version": 4
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "src/headers/**",
+        "vendor/glfw-3.3.8/include",
+        "vendor/assimp/include",
+        "vendor/glad-3.3core/include",
+        "vendor/glm-master",
+        "vendor/imgui-1.89.2",
+        "vendor/stb-image"
+      ],
+      "defines": [
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "compilerPath": "D:/Programs/mingw64/bin/g++.exe",
+      "intelliSenseMode": "windows-gcc-x64",
+      "cppStandard": "c++20"
+    }
+  ],
+  "version": 4
 }
