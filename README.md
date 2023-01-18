@@ -29,6 +29,8 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 - [ ] Skeletal Animations  
 - [ ] SkyBoxes  
 - [ ] Shadows  
+- [ ] Occlusion  
+- [ ] Z-Fighting Optimizations  
 
 ![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.gif?raw=true)
 
@@ -46,7 +48,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 * *OpenGL 3.3+*  (API specification)
 * *GLFW3*  (os facilitations)
 * *GLAD*  (opengl functions)
-* *assimp* (mesh loading)
+* *assimp* (mesh parser)
 * *stb_image* (texture loading)
 * *GLM*  (optimized math library)
 * *Dear ImGui*  (immediate mode GUI) 
