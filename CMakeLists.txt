@@ -9,6 +9,8 @@ add_subdirectory(vendor/assimp SYSTEM)
 add_subdirectory(vendor/glm-master SYSTEM)
 
 aux_source_directory("src" Src)
+aux_source_directory("vendor/imgui-1.89.2/imgui" ImGui)
+aux_source_directory("vendor/glad-3.3core/src" Glad)
 
 add_executable(${PROJECT_NAME}
   ${Src}
