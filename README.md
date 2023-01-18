@@ -36,11 +36,10 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 
 ---
 ### Running:
-> *Tested on Windows only.*  
-> *The Assimp importer is a large library and may take a while to compile.*
-1. Clone or download the source into your preffered location
-2. Build with CMake: ```cmake -B build -G Ninja && cmake --build build```  
-   -> I use ninja here, but you could obviously use any generator like VS
+> *Note: Tested on Windows only. The Assimp importer is a large library and may take a while to compile.*  
+
+Builds with CMake: ```cmake -B build -G Ninja && cmake --build build```  
+I use ninja here, but you could obviously use any generator like VS
 
 **Dependencies**  
 * *OpenGL 3.3+*  (API specification)
