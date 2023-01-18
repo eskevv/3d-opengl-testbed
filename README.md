@@ -32,19 +32,17 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 - [ ] Occlusion  
 - [ ] Z-Fighting Optimizations  
 
-![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/preview.gif?raw=true)
+![alt](https://github.com/eskevv/3D-OpenGL-TestBed/blob/main/res/project/preview.gif?raw=true)
 
 ---
-### Running: 
-*Option 1.* Build from source and grab the dependencies (builds with CMake).  
->-> *(optional) adjust the CMakeLists where to search for dependencies.*  
->-> *from root dir (using Ninja): ```cmake -B build -G Ninja && cmake --build build```*   
+### Running:
+> *Tested on Windows only.*  
+> *The Assimp importer is a large library and may take a while to compile.*
+1. Clone or download the source into your preffered location
+2. Build with CMake: ```cmake -B build -G Ninja && cmake --build build```  
+   -> I use ninja here, but you could obviously use any generator like VS
 
-*Option 2.* Download the binary from Releases 
->-> *not always up to date*  
->-> *requires the res folder in the same directory.*
-
-**Dependencies (already linked)**  
+**Dependencies**  
 * *OpenGL 3.3+*  (API specification)
 * *GLFW3*  (os facilitations)
 * *GLAD*  (opengl functions)
