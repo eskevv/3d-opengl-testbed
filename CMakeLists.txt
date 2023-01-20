@@ -1,46 +1,46 @@
-cmake_minimum_required(VERSION 3.25)
-cmake_path(GET CMAKE_CURRENT_SOURCE_DIR FILENAME ProjectId)
-string(REPLACE " " "_" ProjectId ${ProjectId})
+# SETUP
+cmake_minimum_required(VERSION 3.20..3.25)
+cmake_path(GET CMAKE_CURRENT_SOURCE_DIR FILENAME PROJECT_ID)
+string(REPLACE " " "_" PROJECT_ID ${PROJECT_ID})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-project(${ProjectId})
+project(${PROJECT_ID})
 
-add_subdirectory(vendor/glfw-3.3.8 SYSTEM)
-add_subdirectory(vendor/assimp SYSTEM)
-add_subdirectory(vendor/glm-master SYSTEM)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+option(CMAKE_BUILD_TYPE Release)
 
-aux_source_directory("src" Src)
-aux_source_directory("vendor/imgui-1.89.2/imgui" ImGui)
-aux_source_directory("vendor/glad-3.3core/src" Glad)
+# SOURCE
+aux_source_directory("src" PROJECT_SRC)
+aux_source_directory("vendor/glad/src" GLAD)
 
+# TARGETS
 add_executable(${PROJECT_NAME}
-  ${Src}
-  ${ImGui}
-  ${GlState}
-  ${Glad}
-  ${Models}
-  ${Transformations}
+  ${PROJECT_SRC}
+  ${GLAD}
 )
 
+add_subdirectory(vendor/assimp)
+add_subdirectory(vendor/glfw)
+add_subdirectory(vendor/imgui)
+
+add_dependencies(${PROJECT_NAME} imgui)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
 )
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-
+# INCLUDES
 target_include_directories(${PROJECT_NAME} PRIVATE
-  "src/headers"
-  "vendor/glfw-3.3.8/include"
+  "src/include"
+  "vendor/glfw/include"
   "vendor/assimp/include"
-  "vendor/glad-3.3core/include"
-  "vendor/glm-master"
-  "vendor/imgui-1.89.2/"
+  "vendor/glad/include"
+  "vendor/imgui/include"
+  "vendor/glm"
   "vendor/stb-image"
 )
+target_include_directories(imgui PRIVATE vendor/glfw/include)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-  glfw
-  assimp
-  opengl32
-  gdi32
-)
+target_link_libraries(imgui PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp glfw imgui opengl32 gdi32)

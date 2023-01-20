@@ -3,10 +3,10 @@ Language:        Cpp
 BasedOnStyle:  LLVM
 ColumnLimit:     130
 SortIncludes:    false
+AllowShortFunctionsOnASingleLine: Empty
 # IndentWidth:     3
 # AllowShortIfStatementsOnASingleLine: true
 # AccessModifierOffset: -3
-# AllowShortFunctionsOnASingleLine: Empty
 # AlwaysBreakTemplateDeclarations: Yes
 # AlignAfterOpenBracket: Align
 # AlignArrayOfStructures: None

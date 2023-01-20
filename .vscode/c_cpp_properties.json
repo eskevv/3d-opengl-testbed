@@ -3,13 +3,13 @@
     {
       "name": "Win32",
       "includePath": [
-        "${workspaceFolder}/**",
-        "src/headers/**",
-        "vendor/glfw-3.3.8/include",
+        "src/include",
+        "build/vendor/assimp/include",
+        "vendor/glfw/include",
         "vendor/assimp/include",
-        "vendor/glad-3.3core/include",
-        "vendor/glm-master",
-        "vendor/imgui-1.89.2",
+        "vendor/glad/include",
+        "vendor/imgui/include",
+        "vendor/glm",
         "vendor/stb-image"
       ],
       "defines": [

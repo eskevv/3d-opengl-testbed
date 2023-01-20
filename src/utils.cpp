@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <stb_image.hpp>
 
 unsigned int load_texture(char const *path) {
   unsigned int textureID;
