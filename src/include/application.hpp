@@ -7,8 +7,6 @@
 
 class Application {
 public:
-  Application() = default;
-
   auto static get_instance() -> Application *;
 
   void initialize(unsigned int w, unsigned int h, const char *label, Stage *stage);
