@@ -1,5 +1,5 @@
 # SETUP
-cmake_minimum_required(VERSION 3.20..3.25)
+cmake_minimum_required(VERSION 3.20)
 cmake_path(GET CMAKE_CURRENT_SOURCE_DIR FILENAME PROJECT_ID)
 string(REPLACE " " "_" PROJECT_ID ${PROJECT_ID})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,11 +24,11 @@ add_subdirectory(vendor/imgui)
 
 add_dependencies(${PROJECT_NAME} imgui)
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
-)
+# set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+# target_compile_options(${PROJECT_NAME} PRIVATE
+#   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+#   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+# )
 
 # INCLUDES
 target_include_directories(${PROJECT_NAME} PRIVATE

@@ -1,6 +1,7 @@
 #ifndef __APPLICATION_H__
 #define __APPLICATION_H__
 
+#include "stage.hpp"
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 
@@ -8,17 +9,20 @@ class Application {
 public:
   Application() = default;
 
-  void initialize(unsigned int w, unsigned int h, const char *label);
+  auto static get_instance() -> Application *;
+
+  void initialize(unsigned int w, unsigned int h, const char *label, Stage *stage);
   void input();
   void update(float delta_time);
   void render();
   void shutdown();
 
-  bool is_running() const;
-
-  static Application *get_instance();
+  auto is_running() const -> bool;
+  auto get_width() const -> unsigned int;
+  auto get_height() const -> unsigned int;
 
   GLFWwindow *window_;
+  Stage *stage;
 
 private:
   float delta_time_;
