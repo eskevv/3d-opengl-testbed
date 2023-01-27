@@ -3,9 +3,8 @@ cmake_minimum_required(VERSION 3.20)
 cmake_path(GET CMAKE_CURRENT_SOURCE_DIR FILENAME PROJECT_ID)
 string(REPLACE " " "_" PROJECT_ID ${PROJECT_ID})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(${PROJECT_ID})
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 option(CMAKE_BUILD_TYPE Release)
 
 # SOURCE
@@ -32,7 +31,7 @@ add_dependencies(${PROJECT_NAME} imgui)
 
 # INCLUDES
 target_include_directories(${PROJECT_NAME} PRIVATE
-  "src/include"
+  "include"
   "vendor/glfw/include"
   "vendor/assimp/include"
   "vendor/glad/include"

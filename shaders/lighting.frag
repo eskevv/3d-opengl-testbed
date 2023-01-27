@@ -3,10 +3,14 @@
 #define NR_DIR_LIGHTS 1
 #define NR_SPOT_LIGHTS 1
 #define NR_POINT_LIGHTS 4
+#define NR_TEXTURES_SLOTS 192
 
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+flat in uint TexIndex;
+flat in uint SpecularIndex;
+flat in uint EmissionIndex;
 
 out vec4 FragColor;
 
@@ -24,7 +28,6 @@ struct PointLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-
     float constant;
     float linear;
     float quadratic;
@@ -37,38 +40,30 @@ struct SpotLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-
     float constant;
     float linear;
     float quadratic;
-
     float cutoff;
     float outerCutoff;
 };
 
-struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-    sampler2D emission;
-    float shininess;
-};
-
+uniform sampler2D textures[NR_TEXTURES_SLOTS];
 uniform DirLight dirLights[NR_DIR_LIGHTS];
 uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 uniform PointLight pointLights[NR_POINT_LIGHTS];
-uniform Material material;
 uniform float time;
 uniform bool emissive;
 uniform bool specular;
 uniform bool diffuse;
 uniform float emissionSpeed;
 uniform float emissionStrength;
+uniform float shininess;
 
 // Definitions
 
-vec3 specularMap = vec3(texture(material.specular, TexCoords));
-vec3 diffuseMap = vec3(texture(material.diffuse, TexCoords));
-vec3 emissionMap = vec3(texture(material.emission, TexCoords + vec2(0.0, time * emissionSpeed)));
+vec3 diffuseMap = vec3(texture(textures[TexIndex], TexCoords));
+vec3 specularMap = vec3(texture(textures[SpecularIndex], TexCoords));
+vec3 emissionMap = vec3(texture(textures[EmissionIndex], TexCoords + vec2(0.0, time * emissionSpeed)));
 
 // Function Prototypes
 
@@ -173,7 +168,7 @@ vec3 ComputeSpecular(vec3 color, vec3 lightDir) {
 
     vec3 viewDir = normalize(-FragPos);
     vec3 reflectDir = reflect(-lightDir, Normal);
-    float shininess = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    float shininess = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     return color * shininess * specularMap;
 }
 

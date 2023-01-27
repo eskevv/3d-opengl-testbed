@@ -1,5 +1,6 @@
 
 #include "application.hpp"
+#include "GLFW/glfw3.h"
 #include "structs.hpp"
 #include "light_sources.hpp"
 #include "model.hpp"
@@ -9,6 +10,7 @@
 #include "vertex_array.hpp"
 #include "editor.hpp"
 
+#include <iterator>
 #include <stb_image.hpp>
 #include <glm/glm.hpp>
 #include <iostream>
@@ -23,7 +25,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // body
 
-void Application::initialize(unsigned int screen_w, unsigned int screen_h, const char *label, Stage *stage_in) {
+void Application::initialize(unsigned int screen_w, unsigned int screen_h, const char *label) {
 
   // initialize glfw
   glfwInit();
@@ -57,7 +59,9 @@ void Application::initialize(unsigned int screen_w, unsigned int screen_h, const
   glEnable(GL_STENCIL_TEST);
 
   initialize_imgui(window_);
+}
 
+void Application::set_stage(Stage *stage_in) {
   stage_in->setup();
   stage = stage_in;
   glClearColor(stage->clear_.x, stage->clear_.y, stage->clear_.z, 1.0f);
@@ -108,6 +112,7 @@ void Application::input() {
   }
   stage->spot_lights[0].position += light_offset * delta_time_;
 
+
   if (glfwGetKey(window_, GLFW_KEY_C) == GLFW_PRESS) {
     if (!stage->can_press)
       return;
@@ -138,7 +143,7 @@ void Application::render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   stage->render();
-  render_imgui(*stage);
+  render_imgui(*stage, stage->batcher.get_statistics());
 
   glfwSwapBuffers(window_);
 }

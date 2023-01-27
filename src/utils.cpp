@@ -1,15 +1,9 @@
 #include "utils.hpp"
-#include "shader.hpp"
-#include "light_sources.hpp"
-#include "model.hpp"
-
-// #include <GLFW/glfw3.h>
 #include <stb_image.hpp>
-#include <glm/glm.hpp>
 
 // loading
 
-unsigned int load_texture(char const *path) {
+auto load_texture(char const *path) -> unsigned int {
   unsigned int textureID;
   glGenTextures(1, &textureID);
 
@@ -42,7 +36,7 @@ unsigned int load_texture(char const *path) {
   return textureID;
 }
 
-unsigned int texture_from_file(const char *path, const std::string &directory) {
+auto texture_from_file(const char *path, const std::string &directory) -> unsigned int {
   std::string filename = {std::string(path)};
   filename = directory + '/' + filename;
 
@@ -108,4 +102,3 @@ void render_model(Model &obj_model, const Shader &shader, glm::vec3 pos) {
   shader.set_bool("emissive", obj_model.has_emission);
   obj_model.draw(shader);
 }
-

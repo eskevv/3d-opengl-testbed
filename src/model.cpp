@@ -1,7 +1,9 @@
 #include "model.hpp"
 #include "utils.hpp"
 
-Model::Model(const char *path) { load_model(path); }
+Model::Model(const char *path) {
+  load_model(path);
+}
 
 void Model::draw(const Shader &shader) {
   for (size_t i{0}; i < meshes_.size(); i++) {
@@ -23,7 +25,6 @@ void Model::load_model(const std::string &path) {
 }
 
 void Model::process_node(const aiNode *node, const aiScene *scene) {
-
   for (size_t i{0}; i < node->mNumMeshes; i++) {
     aiMesh *mesh = {scene->mMeshes[node->mMeshes[i]]};
     meshes_.push_back(process_mesh(mesh, scene));
