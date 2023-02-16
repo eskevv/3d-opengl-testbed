@@ -26,6 +26,7 @@ In this project I am using modern OpenGL 3.3+ and soon to use DSA(Direct-State-A
 - [x] ~~Interface editor~~ (01/12/2023)  
 - [x] ~~Materials & Diffuse maps~~ (01/14/2023)  
 - [x] ~~Models~~ (01/15/2023)  
+- [x] ~~Batching~~ (02/03/2023) 
 - [ ] Skeletal Animations  
 - [ ] SkyBoxes  
 - [ ] Shadows  
